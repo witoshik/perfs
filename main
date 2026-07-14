@@ -19,218 +19,224 @@ local functionsSection = mainTab:Section("Functions")
 local state = {
     wallhack = false,
     showRoles = true,
+    espEnabled = false,
 }
 
--- Переменная для хранения ESP объектов
+-- Переменные для ESP
 local espObjects = {}
-local playerRoles = {}
+local espLoop = nil
+local playerCheckLoop = nil
 
--- Функция для определения роли игрока
+-- ====== ФУНКЦИЯ ОПРЕДЕЛЕНИЯ РОЛИ ======
 local function getPlayerRole(player)
     if not player or not player.Character then
-        return "Unknown"
+        return "Unknown", Color3.fromRGB(128, 128, 128)
     end
     
     local character = player.Character
-    local role = "Unknown"
     
-    -- Проверка на Шерифа (Sheriff)
-    if character:FindFirstChild("Sheriff") or character:FindFirstChild("SheriffHat") then
-        role = "Sheriff"
-    -- Проверка на Убийцу (Murderer)
-    elseif character:FindFirstChild("Knife") or character:FindFirstChild("Murderer") then
-        role = "Murderer"
-    else
-        -- Проверяем наличие оружия у игрока (обычный игрок)
-        local hasGun = false
-        for _, child in pairs(character:GetChildren()) do
-            if child:IsA("Tool") and child.Name == "Gun" then
-                hasGun = true
-                break
+    -- Проверяем наличие оружия
+    for _, child in ipairs(character:GetChildren()) do
+        if child:IsA("Tool") then
+            local toolName = child.Name:lower()
+            -- Убийца (нож)
+            if toolName:find("knife") or toolName:find("murder") or toolName:find("blade") or toolName:find("dagger") then
+                return "Murderer", Color3.fromRGB(255, 0, 0)
             end
-        end
-        if hasGun then
-            role = "Innocent" -- Обычный игрок с пистолетом
-        else
-            role = "Innocent"
+            -- Шериф (пистолет)
+            if toolName:find("gun") or toolName:find("pistol") or toolName:find("revolver") or toolName:find("sheriff") then
+                return "Sheriff", Color3.fromRGB(0, 100, 255)
+            end
         end
     end
     
-    return role
+    -- Проверка по аксессуарам (хэты)
+    for _, child in ipairs(character:GetChildren()) do
+        if child:IsA("Accessory") or child:IsA("Hat") then
+            local name = child.Name:lower()
+            if name:find("sheriff") or name:find("badge") then
+                return "Sheriff", Color3.fromRGB(0, 100, 255)
+            end
+            if name:find("knife") or name:find("murder") then
+                return "Murderer", Color3.fromRGB(255, 0, 0)
+            end
+        end
+    end
+    
+    return "Innocent", Color3.fromRGB(0, 255, 0)
 end
 
--- Функция для обновления ESP и ролей
+-- ====== СОЗДАНИЕ ESP ======
+local function createESP(player)
+    if not player or not player.Character then return end
+    
+    local character = player.Character
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    -- Получаем роль и цвет
+    local role, roleColor = getPlayerRole(player)
+    
+    -- ====== WALLHACK (точка над игроком) ======
+    if state.wallhack then
+        local espPoint = Instance.new("Part")
+        espPoint.Name = "ESP_Point"
+        espPoint.Size = Vector3.new(2, 2, 2)
+        espPoint.Shape = Enum.PartType.Ball
+        espPoint.Material = Enum.Material.Neon
+        espPoint.Color = roleColor
+        espPoint.Transparency = 0.4
+        espPoint.Anchored = true
+        espPoint.CanCollide = false
+        espPoint.Parent = workspace
+        
+        -- Привязываем к игроку
+        local weld = Instance.new("Weld")
+        weld.Part0 = rootPart
+        weld.Part1 = espPoint
+        weld.C0 = CFrame.new(0, 3.5, 0)
+        weld.Parent = espPoint
+        
+        table.insert(espObjects, espPoint)
+        table.insert(espObjects, weld)
+    end
+    
+    -- ====== ОТОБРАЖЕНИЕ РОЛЕЙ ======
+    if state.showRoles then
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "RoleDisplay_" .. player.Name
+        billboard.Size = UDim2.new(0, 150, 0, 40)
+        billboard.AlwaysOnTop = true
+        billboard.MaxDistance = 200
+        billboard.Adornee = rootPart
+        billboard.Parent = rootPart
+        
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Name = "RoleText"
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.Text = role
+        textLabel.TextColor3 = roleColor
+        textLabel.TextScaled = true
+        textLabel.Font = Enum.Font.GothamBold
+        textLabel.TextStrokeTransparency = 0.5
+        textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        textLabel.Parent = billboard
+        
+        table.insert(espObjects, billboard)
+        table.insert(espObjects, textLabel)
+    end
+end
+
+-- ====== ОБНОВЛЕНИЕ ESP ======
 local function updateESP()
-    -- Очищаем старые объекты ESP
+    -- Очищаем старые объекты
     for _, obj in pairs(espObjects) do
-        if obj and obj.Parent then
-            obj:Destroy()
-        end
+        pcall(function()
+            if obj and obj.Parent then
+                obj:Destroy()
+            end
+        end)
     end
     espObjects = {}
     
-    -- Очищаем старые роли
-    for _, label in pairs(playerRoles) do
-        if label and label.Parent then
-            label:Destroy()
-        end
-    end
-    playerRoles = {}
-    
-    if not state.wallhack and not state.showRoles then
-        return
-    end
+    if not state.espEnabled then return end
     
     local players = game:GetService("Players")
     local localPlayer = players.LocalPlayer
     
-    for _, player in pairs(players:GetPlayers()) do
-        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local character = player.Character
-            local rootPart = character.HumanoidRootPart
-            
-            -- Wall Hack (показываем игроков сквозь стены)
-            if state.wallhack then
-                -- Создаем точку над игроком
-                local espPoint = Instance.new("Part")
-                espPoint.Name = "ESP_Point"
-                espPoint.Size = Vector3.new(2, 2, 2)
-                espPoint.Shape = Enum.PartType.Ball
-                espPoint.Material = Enum.Material.Neon
-                espPoint.Color = Color3.fromRGB(0, 255, 0)
-                espPoint.Transparency = 0.3
-                espPoint.Anchored = true
-                espPoint.CanCollide = false
-                espPoint.Parent = workspace
-            
-                -- Привязываем точку к игроку
-                local weld = Instance.new("Weld")
-                weld.Part0 = rootPart
-                weld.Part1 = espPoint
-                weld.C0 = CFrame.new(0, 4, 0)
-                weld.Parent = espPoint
-                
-                table.insert(espObjects, espPoint)
-                table.insert(espObjects, weld)
-            end
-            
-            -- Показываем роли под игроком
-            if state.showRoles then
-                local role = getPlayerRole(player)
-                local roleColor = Color3.fromRGB(255, 255, 255)
-                
-                if role == "Murderer" then
-                    roleColor = Color3.fromRGB(255, 0, 0) -- Красный для убийцы
-                elseif role == "Sheriff" then
-                    roleColor = Color3.fromRGB(0, 0, 255) -- Синий для шерифа
-                elseif role == "Innocent" then
-                    roleColor = Color3.fromRGB(0, 255, 0) -- Зеленый для обычных
-                end
-                
-                -- Создаем BillboardGui для отображения роли
-                local billboard = Instance.new("BillboardGui")
-                billboard.Name = "RoleDisplay"
-                billboard.Size = UDim2.new(0, 200, 0, 50)
-                billboard.AlwaysOnTop = true
-                billboard.MaxDistance = 150
-                billboard.Parent = rootPart
-                
-                local textLabel = Instance.new("TextLabel")
-                textLabel.Name = "RoleText"
-                textLabel.Size = UDim2.new(1, 0, 1, 0)
-                textLabel.BackgroundTransparency = 1
-                textLabel.Text = role
-                textLabel.TextColor3 = roleColor
-                textLabel.TextScaled = true
-                textLabel.Font = Enum.Font.GothamBold
-                textLabel.TextStrokeTransparency = 0.5
-                textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-                textLabel.Parent = billboard
-                
-                table.insert(playerRoles, billboard)
-                table.insert(playerRoles, textLabel)
-            end
+    for _, player in ipairs(players:GetPlayers()) do
+        if player ~= localPlayer and player.Character then
+            createESP(player)
         end
     end
 end
 
--- Функция для очистки ESP
-local function clearESP()
-    for _, obj in pairs(espObjects) do
-        if obj and obj.Parent then
-            obj:Destroy()
-        end
-    end
-    espObjects = {}
-    
-    for _, label in pairs(playerRoles) do
-        if label and label.Parent then
-            label:Destroy()
-        end
-    end
-    playerRoles = {}
-end
-
--- Включаем/выключаем Wall Hack
-functionsSection:Toggle("Wall Hack", false, function(enabled)
-    state.wallhack = enabled
+-- ====== ТОГГЛЫ ======
+functionsSection:Toggle("Enable ESP", false, function(enabled)
+    state.espEnabled = enabled
     if enabled then
         updateESP()
+        -- Запускаем цикл обновления
+        if not espLoop then
+            espLoop = game:GetService("RunService").RenderStepped:Connect(function()
+                if state.espEnabled then
+                    updateESP()
+                end
+            end)
+        end
     else
-        clearESP()
-        if state.showRoles then
-            updateESP() -- Обновляем только роли
+        -- Очищаем ESP
+        for _, obj in pairs(espObjects) do
+            pcall(function()
+                if obj and obj.Parent then
+                    obj:Destroy()
+                end
+            end)
+        end
+        espObjects = {}
+        if espLoop then
+            espLoop:Disconnect()
+            espLoop = nil
         end
     end
 end, 1)
 
--- Включаем/выключаем отображение ролей
-functionsSection:Toggle("Show Roles", true, function(enabled)
-    state.showRoles = enabled
-    if enabled then
+functionsSection:Toggle("Wall Hack", false, function(enabled)
+    state.wallhack = enabled
+    if state.espEnabled then
         updateESP()
-    else
-        for _, label in pairs(playerRoles) do
-            if label and label.Parent then
-                label:Destroy()
-            end
-        end
-        playerRoles = {}
     end
 end, 2)
 
--- Кнопка обновления
-functionsSection:Button("Refresh ESP", function()
-    clearESP()
-    updateESP()
+functionsSection:Toggle("Show Roles", true, function(enabled)
+    state.showRoles = enabled
+    if state.espEnabled then
+        updateESP()
+    end
 end, 3)
 
--- Секция информации
-local infoSection = mainTab:Section("Info")
-infoSection:Paragraph("Help", "Wall Hack - показывает игроков сквозь стены\nShow Roles - отображает роли под игроками\n\nРоли: Murderer (красный), Sheriff (синий), Innocent (зеленый)", 1)
+functionsSection:Button("Refresh ESP", function()
+    if state.espEnabled then
+        updateESP()
+        print("[MM2] ESP Refreshed!")
+    end
+end, 4)
 
--- Автоматическое обновление ESP при появлении новых игроков
-game:GetService("Players").PlayerAdded:Connect(function()
-    task.wait(0.5)
-    clearESP()
-    updateESP()
-end)
+-- ====== ОТСЛЕЖИВАНИЕ НОВЫХ ИГРОКОВ ======
+local players = game:GetService("Players")
 
-game:GetService("Players").PlayerRemoving:Connect(function()
-    task.wait(0.1)
-    clearESP()
-    updateESP()
-end)
-
--- Фоновый цикл обновления
-task.spawn(function()
-    while true do
-        task.wait(2)
-        if state.wallhack or state.showRoles then
-            clearESP()
-            updateESP()
-        end
+players.PlayerAdded:Connect(function(player)
+    if state.espEnabled then
+        task.wait(0.2)
+        updateESP()
     end
 end)
+
+players.PlayerRemoving:Connect(function()
+    if state.espEnabled then
+        task.wait(0.1)
+        updateESP()
+    end
+end)
+
+-- ====== ИНФОРМАЦИОННАЯ СЕКЦИЯ ======
+local infoSection = mainTab:Section("Info")
+infoSection:Paragraph("Help", 
+    "Enable ESP - Включить все функции\n" ..
+    "Wall Hack - Показывает игроков сквозь стены\n" ..
+    "Show Roles - Отображает роли под игроками\n\n" ..
+    "🎯 Роли:\n" ..
+    "🔴 Murderer - Убийца\n" ..
+    "🔵 Sheriff - Шериф\n" ..
+    "🟢 Innocent - Обычный игрок", 1)
+
+-- ====== ИНФОРМАЦИЯ ПРИ ЗАГРУЗКЕ ======
+print("====================================")
+print("MM2 Enhanced loaded successfully!")
+print("====================================")
+print("Press RightControl to toggle GUI")
+print("Enable ESP to start")
+print("====================================")
 
 return window
