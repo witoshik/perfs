@@ -88,10 +88,11 @@ local state = {
         targetPart = "Head",
         mode = "Closest",
         visibleCheck = false,
-        teamCheck = false,
+        teamCheck = true,
         silentAim = false,
-        silentFov = 360,
+        silentFov = 300,
         silentVisible = false,
+        showFovCircle = false,
     },
     -- Teleports
     teleport = {
@@ -132,6 +133,7 @@ local silentTarget = nil
 local lastWeapon = nil
 local espObjects = {}
 local mouse = nil
+local fovCircle = nil
 
 -- Получение мыши
 pcall(function()
@@ -166,14 +168,98 @@ local function toggleMouseUnlock(unlock)
     end
 end
 
--- ====== ФУНКЦИЯ ПЕРЕБИНДИНГА ======
-local function rebindKey(oldKey, newKey)
-    -- Проверяем, не занята ли клавиша
-    if newKey == state.binds.toggleMenu or newKey == state.binds.unlockMouse or newKey == state.binds.disableAll then
-        print("[Bind] Key already in use!")
-        return false
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
+-- ====== FOV КРУГ ДЛЯ SILENT AIM ======
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
+
+local function createFovCircle()
+    if not hasDrawing then return end
+    
+    if fovCircle then
+        fovCircle.Visible = false
+        fovCircle:Remove()
+        fovCircle = nil
     end
-    return true
+    
+    fovCircle = Drawing.new("Circle")
+    fovCircle.Visible = false
+    fovCircle.Radius = state.aimbot.silentFov
+    fovCircle.Color = Color3.fromRGB(255, 255, 255)
+    fovCircle.Thickness = 1.5
+    fovCircle.Filled = false
+    fovCircle.NumSides = 64
+    fovCircle.Transparency = 0.5
+    
+    return fovCircle
+end
+
+local function updateFovCircle()
+    if not fovCircle then
+        fovCircle = createFovCircle()
+    end
+    
+    if not fovCircle then return end
+    
+    if state.aimbot.showFovCircle and state.aimbot.silentAim then
+        local viewport = Camera.ViewportSize
+        fovCircle.Visible = true
+        fovCircle.Position = Vector2.new(viewport.X/2, viewport.Y/2)
+        fovCircle.Radius = state.aimbot.silentFov
+        fovCircle.Color = Color3.fromRGB(200, 200, 255)
+        fovCircle.Transparency = 0.3
+    else
+        fovCircle.Visible = false
+    end
+end
+
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
+-- ====== ПРАВИЛЬНЫЙ СКЕЛЕТ ======
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
+
+local function getBonePositions(character)
+    local bones = {}
+    
+    local skeletonJoints = {
+        {"Head", "Torso"},
+        {"Head", "Neck"},
+        {"Neck", "UpperTorso"},
+        {"UpperTorso", "LowerTorso"},
+        {"LowerTorso", "HumanoidRootPart"},
+        {"LeftShoulder", "LeftUpperArm"},
+        {"LeftUpperArm", "LeftLowerArm"},
+        {"LeftLowerArm", "LeftHand"},
+        {"RightShoulder", "RightUpperArm"},
+        {"RightUpperArm", "RightLowerArm"},
+        {"RightLowerArm", "RightHand"},
+        {"LeftHip", "LeftUpperLeg"},
+        {"LeftUpperLeg", "LeftLowerLeg"},
+        {"LeftLowerLeg", "LeftFoot"},
+        {"RightHip", "RightUpperLeg"},
+        {"RightUpperLeg", "RightLowerLeg"},
+        {"RightLowerLeg", "RightFoot"},
+    }
+    
+    for _, joint in ipairs(skeletonJoints) do
+        local part1 = character:FindFirstChild(joint[1])
+        local part2 = character:FindFirstChild(joint[2])
+        
+        if part1 and part2 then
+            table.insert(bones, {part1.Position, part2.Position})
+        end
+    end
+    
+    return bones
+end
+
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
+-- ====== ПРОВЕРКА КОМАНДЫ ======
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
+
+local function isTeamMate(player)
+    if not state.aimbot.teamCheck then return false end
+    local localTeam = LocalPlayer.Team
+    if not localTeam then return false end
+    return localTeam == player.Team
 end
 
 -- ====== ESP ======
@@ -211,31 +297,6 @@ local function createESPObject(player)
     return esp
 end
 
-local function getBonePositions(character)
-    local bones = {}
-    local joints = {
-        {"Head", "Torso"},
-        {"Torso", "LeftShoulder", "LeftArm"},
-        {"Torso", "RightShoulder", "RightArm"},
-        {"Torso", "LeftHip", "LeftLeg"},
-        {"Torso", "RightHip", "RightLeg"},
-        {"LeftArm", "LeftForearm"},
-        {"RightArm", "RightForearm"},
-        {"LeftLeg", "LeftFoot"},
-        {"RightLeg", "RightFoot"},
-    }
-    
-    for _, joint in ipairs(joints) do
-        local part1 = character:FindFirstChild(joint[1])
-        local part2 = character:FindFirstChild(joint[#joint])
-        if part1 and part2 then
-            table.insert(bones, {part1.Position, part2.Position})
-        end
-    end
-    
-    return bones
-end
-
 local function updateESP()
     if not state.enabled or not state.esp.enabled or not hasDrawing then
         for _, esp in pairs(espObjects) do
@@ -253,6 +314,19 @@ local function updateESP()
     
     for _, player in ipairs(Players:GetPlayers()) do
         if player == LocalPlayer then continue end
+        
+        if isTeamMate(player) then
+            if espObjects[player] then
+                local esp = espObjects[player]
+                esp.Box.Visible = false
+                esp.Name.Visible = false
+                esp.Health.Visible = false
+                for _, bone in pairs(esp.Skeleton) do
+                    if bone then bone.Visible = false end
+                end
+            end
+            continue
+        end
         
         local character = player.Character
         if not character then continue end
@@ -354,17 +428,13 @@ end
 local function getPlayers()
     local players = {}
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        if player == LocalPlayer then continue end
+        if isTeamMate(player) then continue end
+        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             table.insert(players, player)
         end
     end
     return players
-end
-
-local function isTeamMate(player)
-    if not state.aimbot.teamCheck then return false end
-    local localTeam = LocalPlayer.Team
-    return localTeam and player.Team == localTeam
 end
 
 local function getTargetPart(player)
@@ -411,7 +481,7 @@ local function findBestTarget(fov, checkVisible)
 end
 
 local function getSilentAimTarget()
-    return findBestTarget(state.aimbot.silentFov, false)
+    return findBestTarget(state.aimbot.silentFov, false) -- false = через стены
 end
 
 local function aimbotLoop()
@@ -426,7 +496,7 @@ local function aimbotLoop()
             local character = mouse.Target.Parent
             if character then
                 local player = Players:GetPlayerFromCharacter(character)
-                if player and player ~= LocalPlayer then
+                if player and player ~= LocalPlayer and not isTeamMate(player) then
                     target = player
                 end
             end
@@ -444,7 +514,10 @@ local function aimbotLoop()
     end
 end
 
--- ====== SILENT AIM ======
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
+-- ====== SILENT AIM (СТРЕЛЬБА ЧЕРЕЗ СТЕНЫ) ======
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
+
 local function hookWeapon(tool)
     if not tool then return end
     
@@ -454,15 +527,23 @@ local function hookWeapon(tool)
             child.FireServer = function(...)
                 if state.enabled and state.aimbot.silentAim then
                     local target = getSilentAimTarget()
-                    if target then
+                    if target and not isTeamMate(target) then
                         local targetPart = getTargetPart(target)
                         if targetPart then
                             local args = {...}
+                            -- Модифицируем аргументы для стрельбы в голову через стены
                             for i, arg in ipairs(args) do
                                 if type(arg) == "Vector3" then
                                     args[i] = targetPart.Position
                                 elseif type(arg) == "CFrame" then
                                     args[i] = CFrame.new(targetPart.Position)
+                                elseif type(arg) == "table" then
+                                    -- Некоторые игры передают позицию в таблице
+                                    pcall(function()
+                                        if arg.Position then
+                                            arg.Position = targetPart.Position
+                                        end
+                                    end)
                                 end
                             end
                             return oldFire(unpack(args))
@@ -489,6 +570,7 @@ end
 -- ====== ТЕЛЕПОРТ ======
 local function teleportToPlayer(targetPlayer)
     if not LocalPlayer.Character then return end
+    if isTeamMate(targetPlayer) then return end
     
     local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return end
@@ -549,7 +631,7 @@ mainSection:Paragraph("Status", "Script is " .. (state.enabled and "Active" or "
 -- Вкладка AIMBOT
 local aimSection = aimTab:Section("Aimbot Settings")
 aimSection:Paragraph("Info", "Aimbot works ALWAYS and THROUGH WALLS", 0)
-aimSection:Paragraph("Target", "Always aims at the HEAD", 1)
+aimSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
 
 aimSection:Toggle("Enable Aimbot", state.aimbot.enabled, function(val)
     state.aimbot.enabled = val
@@ -585,14 +667,15 @@ aimSection:Toggle("Visible Check (OFF = through walls)", state.aimbot.visibleChe
     print("Visible check:", val and "ON" or "OFF (through walls)")
 end, 6)
 
-aimSection:Toggle("Team Check", state.aimbot.teamCheck, function(val)
+aimSection:Toggle("Team Check (ON = ignore teammates)", state.aimbot.teamCheck, function(val)
     state.aimbot.teamCheck = val
+    print("Team check:", val and "ON" or "OFF")
 end, 7)
 
--- Вкладка SILENT AIM
+-- ====== ВКЛАДКА SILENT AIM (С FOV КРУГОМ) ======
 local silentSection = silentTab:Section("Silent Aim Settings")
 silentSection:Paragraph("Info", "Shoots through walls without moving your aim!", 0)
-silentSection:Paragraph("Target", "Always aims at the HEAD", 1)
+silentSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
 
 silentSection:Toggle("Enable Silent Aim", state.aimbot.silentAim, function(val)
     state.aimbot.silentAim = val
@@ -602,6 +685,7 @@ silentSection:Toggle("Enable Silent Aim", state.aimbot.silentAim, function(val)
             mainMaid._silentTask = RunService.RenderStepped:Connect(function()
                 if not state.enabled or not state.aimbot.silentAim then return end
                 silentTarget = getSilentAimTarget()
+                updateFovCircle()
             end)
         end
         print("[Silent Aim] Enabled")
@@ -611,20 +695,38 @@ silentSection:Toggle("Enable Silent Aim", state.aimbot.silentAim, function(val)
             mainMaid._silentTask = nil
         end
         silentTarget = nil
+        if fovCircle then fovCircle.Visible = false end
         print("[Silent Aim] Disabled")
     end
 end, 2)
 
 silentSection:Slider("Silent FOV", 50, 500, state.aimbot.silentFov, 10, function(val)
     state.aimbot.silentFov = val
+    updateFovCircle()
+    print("Silent FOV:", val)
 end, 3)
 
+silentSection:Toggle("Show FOV Circle", state.aimbot.showFovCircle, function(val)
+    state.aimbot.showFovCircle = val
+    if val then
+        if not fovCircle then
+            createFovCircle()
+        end
+        updateFovCircle()
+    else
+        if fovCircle then
+            fovCircle.Visible = false
+        end
+    end
+    print("FOV Circle:", val and "ON" or "OFF")
+end, 4)
+
 silentSection:Paragraph("How it works", 
-    "1. Finds nearest enemy in FOV\n" ..
+    "1. Finds nearest enemy in FOV (not teammate)\n" ..
     "2. Intercepts your shots\n" ..
     "3. Redirects bullets to HEAD\n" ..
     "4. Works through walls!\n" ..
-    "5. Your aim stays still", 4)
+    "5. Your aim stays still", 5)
 
 -- Вкладка TELEPORTS
 local teleSection = teleTab:Section("Teleport Settings")
@@ -647,7 +749,7 @@ end, 4)
 
 -- Вкладка ESP
 local espSection = espTab:Section("ESP Settings")
-espSection:Paragraph("Info", "Shows players through walls", 0)
+espSection:Paragraph("Info", "Shows players through walls | Ignores teammates", 0)
 
 espSection:Toggle("Enable ESP", state.esp.enabled, function(val)
     state.esp.enabled = val
@@ -684,7 +786,7 @@ espSection:Toggle("Names", state.esp.names, function(val)
     state.esp.names = val
 end, 3)
 
-espSection:Toggle("Skeleton", state.esp.skeleton, function(val)
+espSection:Toggle("Skeleton (Full Body)", state.esp.skeleton, function(val)
     state.esp.skeleton = val
     if not val then
         for _, esp in pairs(espObjects) do
@@ -713,25 +815,22 @@ espSection:ColorPicker("ESP Color", state.esp.color, function(color)
     end
 end, 7)
 
--- ====== ВКЛАДКА НАСТРОЕК ======
+-- Вкладка НАСТРОЕК
 local settingsSection = settingsTab:Section("UI Settings")
 settingsSection:Paragraph("Info", "Customize menu appearance and controls", 0)
 
--- Прозрачность
 settingsSection:Slider("Menu Transparency", 0, 1, state.transparency, 0.05, function(val)
     state.transparency = val
     updateTransparency()
     print("[Settings] Transparency:", val)
 end, 1)
 
--- Размер размытия
 settingsSection:Slider("Blur Size", 0, 24, state.blurSize, 1, function(val)
     state.blurSize = val
     window.BlurSize = val
     print("[Settings] Blur size:", val)
 end, 2)
 
--- Бинд для открытия меню
 settingsSection:Keybind("Toggle Menu Key", state.binds.toggleMenu, function(key)
     if key then
         state.binds.toggleMenu = key
@@ -740,7 +839,6 @@ settingsSection:Keybind("Toggle Menu Key", state.binds.toggleMenu, function(key)
     end
 end, 3)
 
--- Бинд для разблокировки мыши
 settingsSection:Keybind("Unlock Mouse Key", state.binds.unlockMouse, function(key)
     if key then
         state.binds.unlockMouse = key
@@ -748,7 +846,6 @@ settingsSection:Keybind("Unlock Mouse Key", state.binds.unlockMouse, function(ke
     end
 end, 4)
 
--- Бинд для полного выключения
 settingsSection:Keybind("Disable All Key", state.binds.disableAll, function(key)
     if key then
         state.binds.disableAll = key
@@ -756,35 +853,33 @@ settingsSection:Keybind("Disable All Key", state.binds.disableAll, function(key)
     end
 end, 5)
 
--- Информация о биндах
 settingsSection:Paragraph("Current Binds", 
     "Menu: " .. tostring(state.binds.toggleMenu.Name) .. "\n" ..
     "Unlock Mouse: " .. tostring(state.binds.unlockMouse.Name) .. "\n" ..
     "Disable All: " .. tostring(state.binds.disableAll.Name), 6)
 
--- ====== ОБРАБОТКА КЛАВИШ (С УЧЕТОМ БИНДОВ) ======
+-- ====== ОБРАБОТКА КЛАВИШ ======
 mainMaid:Give(UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    -- ====== РАЗБЛОКИРОВКА МЫШИ (ПО НАСТРОЕННОЙ КЛАВИШЕ) ======
     if input.KeyCode == state.binds.unlockMouse then
         state.mouseUnlock = not state.mouseUnlock
         toggleMouseUnlock(state.mouseUnlock)
         print("[Mouse] Toggled:", state.mouseUnlock and "UNLOCKED" or "LOCKED")
     end
     
-    -- Телепорт
     if state.enabled and state.teleport.enabled and input.KeyCode == state.teleport.key then
         local target = findBestTarget(500, false)
-        if target then
+        if target and not isTeamMate(target) then
             teleportToPlayer(target)
             print("[Teleport] Teleported to", target.Name)
+        else
+            print("[Teleport] No valid target found")
         end
     end
     
-    -- ====== ПОЛНОЕ ВЫКЛЮЧЕНИЕ (ПО НАСТРОЕННОЙ КЛАВИШЕ) ======
     if input.KeyCode == state.binds.disableAll then
-        print("[F8] Disabling ALL features...")
+        print("[DISABLE] Disabling ALL features...")
         
         state.enabled = false
         state.aimbot.enabled = false
@@ -799,6 +894,7 @@ mainMaid:Give(UserInputService.InputBegan:Connect(function(input, gameProcessed)
             mainMaid._silentTask = nil
         end
         silentTarget = nil
+        if fovCircle then fovCircle.Visible = false end
         
         state.esp.enabled = false
         if mainMaid._espTask then
@@ -843,6 +939,7 @@ end))
 mainMaid:Give(RunService.RenderStepped:Connect(function()
     if state.enabled and state.aimbot.silentAim then
         checkWeapons()
+        updateFovCircle()
     end
 end))
 
@@ -852,34 +949,10 @@ window:CreateConfigSection(mainTab, "Configs")
 -- ====== ОЧИСТКА ======
 window:OnDestroy(function()
     toggleMouseUnlock(false)
+    if fovCircle then
+        fovCircle:Remove()
+        fovCircle = nil
+    end
     for _, esp in pairs(espObjects) do
         if esp.Box then esp.Box:Remove() end
-        if esp.Name then esp.Name:Remove() end
-        if esp.Health then esp.Health:Remove() end
-        for _, bone in pairs(esp.Skeleton) do
-            if bone then bone:Remove() end
-        end
-    end
-    espObjects = {}
-    mainMaid:Cleanup()
-    print("Witoshi Cheat's unloaded successfully!")
-end)
-
--- ====== ПРИМЕНЯЕМ НАЧАЛЬНЫЕ НАСТРОЙКИ ======
-updateTransparency()
-window.BlurSize = state.blurSize
-
--- ====== ИНФОРМАЦИЯ ======
-print("====================================")
-print("Witoshi Cheat's loaded successfully!")
-print("====================================")
-print("Press " .. tostring(state.binds.toggleMenu.Name) .. " to toggle GUI")
-print("AIMBOT: Works ALWAYS and THROUGH WALLS")
-print("MOUSE UNLOCK: Press " .. tostring(state.binds.unlockMouse.Name))
-print("SILENT AIM: Shoots through walls")
-print("TELEPORT: Press T to teleport")
-print("ESP: Shows players through walls")
-print("DISABLE ALL: Press " .. tostring(state.binds.disableAll.Name))
-print("====================================")
-
-return window
+        if esp.Name then esp.Name
