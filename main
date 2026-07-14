@@ -1,5 +1,5 @@
 -- ====== ====== ====== ====== ====== ====== ====== ====== ======
--- ====== ЗАГРУЗОЧНЫЙ ЭКРАН (ВЕСЬ ЭКРАН, НЕОНОВЫЙ) ======
+-- ====== ЗАГРУЗОЧНЫЙ ЭКРАН (ЧЕРНО-БЕЛЫЙ НЕОН) ======
 -- ====== ====== ====== ====== ====== ====== ====== ====== ======
 
 local function createLoadingScreen()
@@ -10,57 +10,79 @@ local function createLoadingScreen()
     screenGui.Parent = game:GetService("CoreGui")
     screenGui.ResetOnSpawn = false
     
-    -- ФОН НА ВЕСЬ ЭКРАН (фиолетово-синий неоновый градиент)
+    -- ФОН НА ВЕСЬ ЭКРАН (черно-белый градиент)
     local background = Instance.new("Frame")
     background.Name = "Background"
     background.Size = UDim2.new(1, 0, 1, 0)
     background.Position = UDim2.new(0, 0, 0, 0)
-    background.BackgroundColor3 = Color3.fromRGB(10, 5, 30)
+    background.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
     background.BackgroundTransparency = 0
     background.Parent = screenGui
     
-    -- Анимированный неоновый фон (свечение)
-    local glowBg = Instance.new("Frame")
-    glowBg.Name = "GlowBg"
-    glowBg.Size = UDim2.new(1, 0, 1, 0)
-    glowBg.Position = UDim2.new(0, 0, 0, 0)
-    glowBg.BackgroundColor3 = Color3.fromRGB(80, 40, 180)
-    glowBg.BackgroundTransparency = 0.85
-    glowBg.BorderSizePixel = 0
-    glowBg.Parent = screenGui
+    -- Белое свечение (небольшое)
+    local whiteGlow = Instance.new("Frame")
+    whiteGlow.Name = "WhiteGlow"
+    whiteGlow.Size = UDim2.new(0.4, 0, 0.4, 0)
+    whiteGlow.Position = UDim2.new(0.3, 0, 0.3, 0)
+    whiteGlow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    whiteGlow.BackgroundTransparency = 0.95
+    whiteGlow.BorderSizePixel = 0
+    whiteGlow.Parent = screenGui
     
-    -- Дополнительное свечение (пульсирующее)
-    local pulseGlow = Instance.new("Frame")
-    pulseGlow.Name = "PulseGlow"
-    pulseGlow.Size = UDim2.new(0.6, 0, 0.6, 0)
-    pulseGlow.Position = UDim2.new(0.2, 0, 0.2, 0)
-    pulseGlow.BackgroundColor3 = Color3.fromRGB(120, 60, 255)
-    pulseGlow.BackgroundTransparency = 0.9
-    pulseGlow.BorderSizePixel = 0
-    pulseGlow.Parent = screenGui
+    -- Анимированные частицы (звезды)
+    local particles = {}
+    for i = 1, 30 do
+        local particle = Instance.new("Frame")
+        particle.Name = "Particle_" .. i
+        particle.Size = UDim2.new(0, math.random(2, 5), 0, math.random(2, 5))
+        particle.Position = UDim2.new(math.random(), 0, math.random(), 0)
+        particle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        particle.BackgroundTransparency = math.random(30, 80) / 100
+        particle.BorderSizePixel = 0
+        particle.Parent = screenGui
+        particles[i] = {
+            frame = particle,
+            speed = 0.0005 + math.random() * 0.002,
+            direction = math.random() * 2 * math.pi,
+            size = math.random(2, 5)
+        }
+    end
     
     -- Контейнер для текста (по центру)
     local container = Instance.new("Frame")
     container.Name = "Container"
-    container.Size = UDim2.new(0, 700, 0, 250)
-    container.Position = UDim2.new(0.5, -350, 0.5, -125)
+    container.Size = UDim2.new(0, 800, 0, 300)
+    container.Position = UDim2.new(0.5, -400, 0.5, -150)
     container.BackgroundTransparency = 1
     container.BorderSizePixel = 0
     container.Parent = screenGui
+    
+    -- Неоновое свечение вокруг текста
+    local textGlow = Instance.new("Frame")
+    textGlow.Name = "TextGlow"
+    textGlow.Size = UDim2.new(1, 60, 1, 60)
+    textGlow.Position = UDim2.new(0.5, -30, 0.5, -30)
+    textGlow.AnchorPoint = Vector2.new(0.5, 0.5)
+    textGlow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    textGlow.BackgroundTransparency = 0.92
+    textGlow.BorderSizePixel = 2
+    textGlow.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    textGlow.BorderColor3 = Color3.fromRGB(200, 200, 200)
+    textGlow.Parent = container
     
     -- Каждая буква "Leek Cheats" будет отдельным элементом
     local letters = {}
     local letterContainer = Instance.new("Frame")
     letterContainer.Name = "LetterContainer"
-    letterContainer.Size = UDim2.new(1, 0, 0, 120)
-    letterContainer.Position = UDim2.new(0, 0, 0.1, 0)
+    letterContainer.Size = UDim2.new(1, 0, 0, 140)
+    letterContainer.Position = UDim2.new(0, 0, 0.05, 0)
     letterContainer.BackgroundTransparency = 1
     letterContainer.Parent = container
     
-    -- Создаём буквы с неоновым эффектом
+    -- Создаём буквы с белым неоновым эффектом
     local text = "Leek Cheats"
-    local letterWidth = 700 / #text
-    local letterSize = 70
+    local letterWidth = 800 / #text
+    local letterSize = 85
     
     for i = 1, #text do
         local char = text:sub(i, i)
@@ -70,24 +92,24 @@ local function createLoadingScreen()
         letter.Position = UDim2.new((i-1) / #text, 0, 0.5, -letterSize/2)
         letter.BackgroundTransparency = 1
         letter.Text = char
-        letter.TextColor3 = Color3.fromRGB(220, 200, 255)
+        letter.TextColor3 = Color3.fromRGB(255, 255, 255)
         letter.TextSize = letterSize
         letter.Font = Enum.Font.GothamBold
         letter.TextXAlignment = Enum.TextXAlignment.Center
         letter.TextYAlignment = Enum.TextYAlignment.Center
-        letter.TextStrokeColor3 = Color3.fromRGB(150, 100, 255)
+        letter.TextStrokeColor3 = Color3.fromRGB(200, 200, 200)
         letter.TextStrokeTransparency = 0.2
         letter.TextTransparency = 1
         letter.Parent = letterContainer
         
-        -- Тень для неона
+        -- Тень для неона (белая)
         local shadow = Instance.new("TextLabel")
         shadow.Name = "Shadow_" .. i
         shadow.Size = UDim2.new(0, letterWidth, 0, letterSize)
         shadow.Position = UDim2.new((i-1) / #text, 2, 0.5, -letterSize/2 + 2)
         shadow.BackgroundTransparency = 1
         shadow.Text = char
-        shadow.TextColor3 = Color3.fromRGB(80, 40, 200)
+        shadow.TextColor3 = Color3.fromRGB(150, 150, 150)
         shadow.TextSize = letterSize
         shadow.Font = Enum.Font.GothamBold
         shadow.TextXAlignment = Enum.TextXAlignment.Center
@@ -95,50 +117,60 @@ local function createLoadingScreen()
         shadow.TextTransparency = 1
         shadow.Parent = letterContainer
         
-        letters[i] = {letter = letter, shadow = shadow}
+        -- Внешнее свечение буквы
+        local letterGlow = Instance.new("Frame")
+        letterGlow.Name = "LetterGlow_" .. i
+        letterGlow.Size = UDim2.new(0, letterWidth + 20, 0, letterSize + 20)
+        letterGlow.Position = UDim2.new((i-1) / #text, -10, 0.5, -letterSize/2 - 10)
+        letterGlow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        letterGlow.BackgroundTransparency = 0.95
+        letterGlow.BorderSizePixel = 0
+        letterGlow.Parent = letterContainer
+        
+        letters[i] = {letter = letter, shadow = shadow, glow = letterGlow}
     end
     
     -- Подпись "by Witoshik" (появляется после)
     local subtitleLabel = Instance.new("TextLabel")
     subtitleLabel.Name = "SubtitleLabel"
-    subtitleLabel.Size = UDim2.new(1, 0, 0, 40)
-    subtitleLabel.Position = UDim2.new(0, 0, 0.65, 0)
+    subtitleLabel.Size = UDim2.new(1, 0, 0, 50)
+    subtitleLabel.Position = UDim2.new(0, 0, 0.62, 0)
     subtitleLabel.BackgroundTransparency = 1
     subtitleLabel.Text = "by Witoshik"
-    subtitleLabel.TextColor3 = Color3.fromRGB(180, 180, 255)
-    subtitleLabel.TextSize = 22
+    subtitleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    subtitleLabel.TextSize = 24
     subtitleLabel.Font = Enum.Font.Gotham
     subtitleLabel.TextXAlignment = Enum.TextXAlignment.Center
     subtitleLabel.TextYAlignment = Enum.TextYAlignment.Center
     subtitleLabel.TextTransparency = 1
     subtitleLabel.Parent = container
     
-    -- Полоса загрузки (неоновая)
+    -- Полоса загрузки
     local loadingBarBg = Instance.new("Frame")
     loadingBarBg.Name = "LoadingBarBg"
-    loadingBarBg.Size = UDim2.new(0.6, 0, 0, 5)
+    loadingBarBg.Size = UDim2.new(0.6, 0, 0, 6)
     loadingBarBg.Position = UDim2.new(0.2, 0, 0.8, 0)
-    loadingBarBg.BackgroundColor3 = Color3.fromRGB(30, 20, 60)
+    loadingBarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     loadingBarBg.BackgroundTransparency = 0.5
-    loadingBarBg.BorderSizePixel = 2
-    loadingBarBg.BorderColor3 = Color3.fromRGB(150, 100, 255)
+    loadingBarBg.BorderSizePixel = 1
+    loadingBarBg.BorderColor3 = Color3.fromRGB(100, 100, 100)
     loadingBarBg.Parent = container
     
     local loadingBar = Instance.new("Frame")
     loadingBar.Name = "LoadingBar"
     loadingBar.Size = UDim2.new(0, 0, 1, 0)
     loadingBar.Position = UDim2.new(0, 0, 0, 0)
-    loadingBar.BackgroundColor3 = Color3.fromRGB(200, 150, 255)
+    loadingBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     loadingBar.BackgroundTransparency = 0.2
     loadingBar.BorderSizePixel = 0
     loadingBar.Parent = loadingBarBg
     
-    -- Свечение полосы
+    -- Белое свечение полосы
     local loadingBarGlow = Instance.new("Frame")
     loadingBarGlow.Name = "LoadingBarGlow"
-    loadingBarGlow.Size = UDim2.new(0, 0, 1, 8)
-    loadingBarGlow.Position = UDim2.new(0, 0, 0, -1.5)
-    loadingBarGlow.BackgroundColor3 = Color3.fromRGB(200, 150, 255)
+    loadingBarGlow.Size = UDim2.new(0, 0, 1, 10)
+    loadingBarGlow.Position = UDim2.new(0, 0, 0, -2)
+    loadingBarGlow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     loadingBarGlow.BackgroundTransparency = 0.7
     loadingBarGlow.BorderSizePixel = 0
     loadingBarGlow.Parent = loadingBar
@@ -150,14 +182,34 @@ local function createLoadingScreen()
     percentLabel.Position = UDim2.new(0, 0, 0.87, 0)
     percentLabel.BackgroundTransparency = 1
     percentLabel.Text = "0%"
-    percentLabel.TextColor3 = Color3.fromRGB(180, 180, 255)
+    percentLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
     percentLabel.TextSize = 18
     percentLabel.Font = Enum.Font.Gotham
     percentLabel.TextXAlignment = Enum.TextXAlignment.Center
     percentLabel.TextYAlignment = Enum.TextYAlignment.Center
     percentLabel.Parent = container
     
-    return screenGui, letters, subtitleLabel, loadingBar, loadingBarGlow, percentLabel, background, pulseGlow
+    return screenGui, letters, subtitleLabel, loadingBar, loadingBarGlow, percentLabel, background, whiteGlow, particles
+end
+
+-- ====== АНИМАЦИЯ ЧАСТИЦ ======
+local function animateParticles(particles)
+    task.spawn(function()
+        while true do
+            for _, p in ipairs(particles) do
+                if p.frame and p.frame.Parent then
+                    local x = p.frame.Position.X.Scale + p.speed * math.cos(p.direction)
+                    local y = p.frame.Position.Y.Scale + p.speed * math.sin(p.direction)
+                    if x > 1 then x = 0 end
+                    if x < 0 then x = 1 end
+                    if y > 1 then y = 0 end
+                    if y < 0 then y = 1 end
+                    p.frame.Position = UDim2.new(x, 0, y, 0)
+                end
+            end
+            task.wait(0.02)
+        end
+    end)
 end
 
 -- ====== АНИМАЦИЯ ПОЯВЛЕНИЯ БУКВ ======
@@ -173,8 +225,14 @@ local function animateLetters(letters, speed, callback)
                     transparency = transparency - 0.05
                     letter.letter.TextTransparency = transparency
                     letter.shadow.TextTransparency = transparency
+                    letter.glow.BackgroundTransparency = 0.95 + (1 - transparency) * 0.85
                     task.wait(0.02)
                     fadeIn()
+                else
+                    -- Эффект вспышки при появлении
+                    letter.glow.BackgroundTransparency = 0.3
+                    task.wait(0.05)
+                    letter.glow.BackgroundTransparency = 0.95
                 end
             end
             fadeIn()
@@ -189,12 +247,12 @@ local function animateLetters(letters, speed, callback)
 end
 
 -- ====== ПУЛЬСАЦИЯ ФОНА ======
-local function animateBackground(pulseGlow)
+local function animateBackground(whiteGlow)
     local pulse = 0
     local direction = 1
     task.spawn(function()
-        while pulseGlow and pulseGlow.Parent do
-            pulse = pulse + 0.01 * direction
+        while whiteGlow and whiteGlow.Parent do
+            pulse = pulse + 0.008 * direction
             if pulse > 1 then
                 pulse = 1
                 direction = -1
@@ -202,24 +260,25 @@ local function animateBackground(pulseGlow)
                 pulse = 0
                 direction = 1
             end
-            pulseGlow.BackgroundTransparency = 0.85 + pulse * 0.1
-            local size = 0.5 + pulse * 0.15
-            pulseGlow.Size = UDim2.new(size, 0, size, 0)
-            pulseGlow.Position = UDim2.new((1 - size) / 2, 0, (1 - size) / 2, 0)
+            whiteGlow.BackgroundTransparency = 0.92 + pulse * 0.05
+            local size = 0.3 + pulse * 0.15
+            whiteGlow.Size = UDim2.new(size, 0, size, 0)
+            whiteGlow.Position = UDim2.new((1 - size) / 2, 0, (1 - size) / 2, 0)
             task.wait(0.02)
         end
     end)
 end
 
 -- ====== ЗАПУСК ЗАГРУЗОЧНОГО ЭКРАНА ======
-local screenGui, letters, subtitleLabel, loadingBar, loadingBarGlow, percentLabel, background, pulseGlow = createLoadingScreen()
+local screenGui, letters, subtitleLabel, loadingBar, loadingBarGlow, percentLabel, background, whiteGlow, particles = createLoadingScreen()
 
--- Запускаем анимацию фона
-animateBackground(pulseGlow)
+-- Запускаем анимации
+animateBackground(whiteGlow)
+animateParticles(particles)
 
 -- Анимация загрузки
 local loadingProgress = 0
-local loadingSpeed = 0.015
+local loadingSpeed = 0.02
 local isLoadingComplete = false
 
 local function updateLoading()
@@ -230,15 +289,13 @@ local function updateLoading()
         local parentWidth = loadingBar.Parent.Size.X.Offset
         local barWidth = (loadingProgress / 100) * parentWidth
         loadingBar.Size = UDim2.new(0, barWidth, 1, 0)
-        loadingBarGlow.Size = UDim2.new(0, barWidth + 20, 1, 8)
-        loadingBarGlow.Position = UDim2.new(0, -10, 0, -1.5)
+        loadingBarGlow.Size = UDim2.new(0, barWidth + 30, 1, 10)
+        loadingBarGlow.Position = UDim2.new(0, -15, 0, -2)
         
-        -- Меняем цвет полосы (неоновый градиент)
-        local r = math.floor(150 + (loadingProgress / 100) * 105)
-        local g = math.floor(100 + (loadingProgress / 100) * 155)
-        local b = 255
-        loadingBar.BackgroundColor3 = Color3.fromRGB(r, g, b)
-        loadingBarGlow.BackgroundColor3 = Color3.fromRGB(r, g, b)
+        -- Меняем яркость полосы
+        local brightness = math.floor(150 + (loadingProgress / 100) * 105)
+        loadingBar.BackgroundColor3 = Color3.fromRGB(brightness, brightness, brightness)
+        loadingBarGlow.BackgroundColor3 = Color3.fromRGB(brightness, brightness, brightness)
         
         -- Обновляем проценты
         percentLabel.Text = loadingProgress .. "%"
@@ -251,10 +308,8 @@ local function updateLoading()
 end
 
 -- ====== ЗАПУСК АНИМАЦИЙ ======
--- Запускаем появление букв (каждая буква появляется с интервалом 0.06 сек)
-animateLetters(letters, 0.06, function()
-    -- После появления всех букв, показываем подпись
-    task.wait(0.3)
+animateLetters(letters, 0.05, function()
+    task.wait(0.2)
     
     -- Плавное появление подписи
     local function fadeInSubtitle()
@@ -267,7 +322,6 @@ animateLetters(letters, 0.06, function()
     end
     fadeInSubtitle()
     
-    -- Запускаем полосу загрузки
     task.wait(0.3)
     updateLoading()
 end)
@@ -303,7 +357,6 @@ local function fadeOutLoadingScreen()
             step()
         end
         
-        -- Небольшая задержка после завершения загрузки
         task.wait(0.5)
         fadeOut()
     else
@@ -312,7 +365,7 @@ local function fadeOutLoadingScreen()
     end
 end
 
--- Запускаем удаление в отдельном потоке
+-- Запускаем удаление
 task.spawn(function()
     while not isLoadingComplete do
         task.wait(0.1)
@@ -320,10 +373,7 @@ task.spawn(function()
     fadeOutLoadingScreen()
 end)
 
--- ====== ====== ====== ====== ====== ====== ====== ====== ======
--- ====== ОСНОВНОЙ КОД СКРИПТА ======
--- ====== ====== ====== ====== ====== ====== ====== ====== ======
-
+-- ====== ОСТАЛЬНОЙ КОД СКРИПТА ======
 -- Загрузка билдера и утилит
 local Builder = loadstring(game:HttpGet("https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/builder.lua"))()
 local UTILS_URL = "https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/utils/"
@@ -1003,7 +1053,7 @@ end, 2)
 
 mainSection:Paragraph("Status", "Script is " .. (state.enabled and "Active" or "Inactive"), 3)
 
--- Остальные вкладки (сокращены для читаемости, функционал тот же)
+-- Остальные вкладки (сокращены для читаемости)
 local aimSection = aimTab:Section("Aimbot Settings")
 aimSection:Paragraph("Info", "Aimbot works ALWAYS | Only alive targets", 0)
 aimSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
