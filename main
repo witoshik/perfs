@@ -956,3 +956,4 @@ window:OnDestroy(function()
     for _, esp in pairs(espObjects) do
         if esp.Box then esp.Box:Remove() end
         if esp.Name then esp.Name
+return window
