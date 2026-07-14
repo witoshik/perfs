@@ -295,6 +295,17 @@ local function safeLoadUtil(name)
     return nil
 end
 
+-- Принудительная обработка Home
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Home then
+        if window then
+            window:Toggle() -- Переключаем видимость меню
+        end
+    end
+end)
+
 -- Загружаем утилиты
 local Maid = safeLoadUtil("maid")
 local Runtime = safeLoadUtil("runtime")
