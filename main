@@ -955,5 +955,34 @@ window:OnDestroy(function()
     end
     for _, esp in pairs(espObjects) do
         if esp.Box then esp.Box:Remove() end
-        if esp.Name then esp.Name
+        if esp.Name then esp.Name:Remove() end
+        if esp.Health then esp.Health:Remove() end
+        for _, bone in pairs(esp.Skeleton) do
+            if bone then bone:Remove() end
+        end
+    end
+    espObjects = {}
+    mainMaid:Cleanup()
+    print("Witoshi Cheat's unloaded successfully!")
+end)
+
+-- ====== ПРИМЕНЯЕМ НАЧАЛЬНЫЕ НАСТРОЙКИ ======
+updateTransparency()
+window.BlurSize = state.blurSize
+createFovCircle()
+
+-- ====== ИНФОРМАЦИЯ ======
+print("====================================")
+print("Witoshi Cheat's loaded successfully!")
+print("====================================")
+print("Press " .. tostring(state.binds.toggleMenu.Name) .. " to toggle GUI")
+print("AIMBOT: Works ALWAYS | Ignores teammates")
+print("MOUSE UNLOCK: Press " .. tostring(state.binds.unlockMouse.Name))
+print("SILENT AIM: Shoots through walls | Ignores teammates")
+print("  - Show FOV Circle: Show range circle")
+print("TELEPORT: Press T to teleport (enemies only)")
+print("ESP: Shows players through walls | Ignores teammates")
+print("DISABLE ALL: Press " .. tostring(state.binds.disableAll.Name))
+print("====================================")
+
 return window
