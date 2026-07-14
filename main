@@ -1,5 +1,5 @@
 -- ====== ====== ====== ====== ====== ====== ====== ====== ======
--- ====== ЗАГРУЗОЧНЫЙ ЭКРАН (ЗВЕЗДЫ + КРАСИВЫЙ ТЕКСТ) ======
+-- ====== ЗАГРУЗОЧНЫЙ ЭКРАН (ПОЛНЫЙ ЭКРАН) ======
 -- ====== ====== ====== ====== ====== ====== ====== ====== ======
 
 local function createLoadingScreen()
@@ -10,18 +10,18 @@ local function createLoadingScreen()
     screenGui.Parent = game:GetService("CoreGui")
     screenGui.ResetOnSpawn = false
     
-    -- ЧЕРНЫЙ ФОН (полный экран)
+    -- ЧЕРНЫЙ ФОН (полный экран - 100% размер)
     local background = Instance.new("Frame")
     background.Name = "Background"
-    background.Size = UDim2.new(1, 0, 1, 0)
+    background.Size = UDim2.new(1, 0, 1, 0) -- ВЕСЬ ЭКРАН
     background.Position = UDim2.new(0, 0, 0, 0)
     background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     background.BackgroundTransparency = 0
     background.Parent = screenGui
     
-    -- ====== ЗВЕЗДЫ (80 штук для красивого эффекта) ======
+    -- ====== ЗВЕЗДЫ (100 штук) ======
     local stars = {}
-    for i = 1, 80 do
+    for i = 1, 100 do
         local star = Instance.new("Frame")
         star.Name = "Star_" .. i
         local size = math.random(1, 4)
@@ -35,25 +35,25 @@ local function createLoadingScreen()
         -- Свечение для звезд
         local glow = Instance.new("Frame")
         glow.Name = "Glow_" .. i
-        glow.Size = UDim2.new(0, size * 3, 0, size * 3)
-        glow.Position = UDim2.new(0.5, -size * 1.5, 0.5, -size * 1.5)
+        glow.Size = UDim2.new(0, size * 4, 0, size * 4)
+        glow.Position = UDim2.new(0.5, -size * 2, 0.5, -size * 2)
         glow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        glow.BackgroundTransparency = 0.9
+        glow.BackgroundTransparency = 0.92
         glow.BorderSizePixel = 0
         glow.Parent = star
         
         stars[i] = {
             frame = star,
             glow = glow,
-            speed = 0.0002 + math.random() * 0.001,
+            speed = 0.0003 + math.random() * 0.0015,
             direction = math.random() * 2 * math.pi,
             size = size,
-            twinkleSpeed = 0.5 + math.random() * 1.5,
+            twinkleSpeed = 0.5 + math.random() * 2,
             twinkleOffset = math.random() * 6,
         }
     end
     
-    -- ====== ТЕКСТ "Leek Cheats" (каждая буква отдельно) ======
+    -- ====== ТЕКСТ "Leek Cheats" ======
     local textContainer = Instance.new("Frame")
     textContainer.Name = "TextContainer"
     textContainer.Size = UDim2.new(0, 900, 0, 150)
@@ -195,12 +195,12 @@ local function animateStars(stars)
                     local twinkle = math.sin(tick() * s.twinkleSpeed + s.twinkleOffset)
                     local transparency = 0.2 + (twinkle + 1) / 2 * 0.6
                     s.frame.BackgroundTransparency = transparency
-                    s.glow.BackgroundTransparency = 0.85 + (twinkle + 1) / 2 * 0.1
+                    s.glow.BackgroundTransparency = 0.85 + (twinkle + 1) / 2 * 0.12
                     
                     -- Размер звезд (пульсация)
                     local pulse = 1 + (twinkle + 1) / 2 * 0.5
                     s.frame.Size = UDim2.new(0, s.size * pulse, 0, s.size * pulse)
-                    s.glow.Size = UDim2.new(0, s.size * 3 * pulse, 0, s.size * 3 * pulse)
+                    s.glow.Size = UDim2.new(0, s.size * 4 * pulse, 0, s.size * 4 * pulse)
                 end
             end
             task.wait(0.02)
@@ -208,7 +208,7 @@ local function animateStars(stars)
     end)
 end
 
--- ====== АНИМАЦИЯ ПОЯВЛЕНИЯ БУКВ ======
+-- ====== АНИМАЦИЯ ПОЯВЛЕНИЯ БУКВ (УСКОРЕННАЯ) ======
 local function animateLetters(letters, speed, callback)
     local index = 1
     local function showNextLetter()
@@ -217,22 +217,21 @@ local function animateLetters(letters, speed, callback)
             local transparency = 1
             local function fadeIn()
                 if transparency > 0 then
-                    transparency = transparency - 0.03
+                    transparency = transparency - 0.06 -- БЫСТРЕЕ (было 0.03)
                     l.letter.TextTransparency = transparency
                     l.shadow.TextTransparency = transparency
                     l.glow.BackgroundTransparency = 0.95 + (1 - transparency) * 0.85
-                    task.wait(0.015)
+                    task.wait(0.01) -- БЫСТРЕЕ (было 0.015)
                     fadeIn()
                 else
-                    -- Вспышка при появлении
                     l.glow.BackgroundTransparency = 0.2
-                    task.wait(0.05)
+                    task.wait(0.03) -- БЫСТРЕЕ (было 0.05)
                     l.glow.BackgroundTransparency = 0.95
                 end
             end
             fadeIn()
             index = index + 1
-            task.wait(speed)
+            task.wait(speed) -- 0.05 сек между буквами (было 0.08)
             showNextLetter()
         else
             if callback then callback() end
@@ -276,22 +275,22 @@ local function updateLoading()
 end
 
 -- ====== ЗАПУСК АНИМАЦИЙ ======
--- Появление букв (каждая буква появляется с интервалом 0.08 сек)
-animateLetters(letters, 0.08, function()
-    task.wait(0.2)
+-- Буквы появляются быстрее (0.05 сек между буквами)
+animateLetters(letters, 0.05, function()
+    task.wait(0.15) -- Меньше паузы (было 0.2)
     
     -- Плавное появление подписи
     local function fadeInSubtitle()
         local transparency = subtitle.TextTransparency
         if transparency > 0 then
-            subtitle.TextTransparency = transparency - 0.03
-            task.wait(0.02)
+            subtitle.TextTransparency = transparency - 0.04 -- БЫСТРЕЕ (было 0.03)
+            task.wait(0.015) -- БЫСТРЕЕ (было 0.02)
             fadeInSubtitle()
         end
     end
     fadeInSubtitle()
     
-    task.wait(0.3)
+    task.wait(0.2) -- Меньше паузы (было 0.3)
     updateLoading()
 end)
 
@@ -303,20 +302,20 @@ local function fadeOutLoadingScreen()
             
             local transparency = 0
             local function step()
-                transparency = transparency + 0.02
+                transparency = transparency + 0.025
                 if transparency < 1 then
                     for _, child in ipairs(screenGui:GetChildren()) do
                         if child:IsA("TextLabel") then
-                            child.TextTransparency = math.min(child.TextTransparency + 0.02, 1)
+                            child.TextTransparency = math.min(child.TextTransparency + 0.025, 1)
                         end
                         if child:IsA("Frame") and child.Name ~= "Background" then
-                            child.BackgroundTransparency = math.min(child.BackgroundTransparency + 0.02, 1)
+                            child.BackgroundTransparency = math.min(child.BackgroundTransparency + 0.025, 1)
                         end
                         if child:IsA("Frame") and child.Name:find("Star") then
-                            child.BackgroundTransparency = math.min(child.BackgroundTransparency + 0.02, 1)
+                            child.BackgroundTransparency = math.min(child.BackgroundTransparency + 0.025, 1)
                         end
                     end
-                    task.wait(0.02)
+                    task.wait(0.015)
                     step()
                 else
                     screenGui:Destroy()
@@ -325,10 +324,10 @@ local function fadeOutLoadingScreen()
             step()
         end
         
-        task.wait(0.5)
+        task.wait(0.3) -- Меньше паузы (было 0.5)
         fadeOut()
     else
-        task.wait(0.1)
+        task.wait(0.05)
         fadeOutLoadingScreen()
     end
 end
@@ -336,7 +335,7 @@ end
 -- Запускаем удаление
 task.spawn(function()
     while not isLoadingComplete do
-        task.wait(0.1)
+        task.wait(0.05)
     end
     fadeOutLoadingScreen()
 end)
@@ -1021,7 +1020,7 @@ end, 2)
 
 mainSection:Paragraph("Status", "Script is " .. (state.enabled and "Active" or "Inactive"), 3)
 
--- Остальные вкладки (сокращены для читаемости, функционал полный)
+-- Остальные вкладки (сокращены для читаемости)
 local aimSection = aimTab:Section("Aimbot Settings")
 aimSection:Paragraph("Info", "Aimbot works ALWAYS | Only alive targets", 0)
 aimSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
