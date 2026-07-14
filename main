@@ -48,7 +48,7 @@ local function createLoadingScreen()
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "TitleLabel"
     titleLabel.Size = UDim2.new(1, 0, 0, 80)
-    titleLabel.Position = UDim2.new(0, 0, 0.25, 0)
+    titleLabel.Position = UDim2.new(0, 0, 0.2, 0)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = ""
     titleLabel.TextColor3 = Color3.fromRGB(220, 200, 255)
@@ -64,7 +64,7 @@ local function createLoadingScreen()
     local titleShadow = Instance.new("TextLabel")
     titleShadow.Name = "TitleShadow"
     titleShadow.Size = UDim2.new(1, 0, 0, 80)
-    titleShadow.Position = UDim2.new(0, 2, 0.25, 2)
+    titleShadow.Position = UDim2.new(0, 2, 0.2, 2)
     titleShadow.BackgroundTransparency = 1
     titleShadow.Text = ""
     titleShadow.TextColor3 = Color3.fromRGB(100, 50, 200)
@@ -75,30 +75,30 @@ local function createLoadingScreen()
     titleShadow.TextTransparency = 0.5
     titleShadow.Parent = container
     
-    -- Подпись "by Witoshik" (неоновая)
+    -- ====== ПОДПИСЬ "by Witoshik" (МЕЛКИМ ШРИФТОМ ПОД НАЗВАНИЕМ) ======
     local subtitleLabel = Instance.new("TextLabel")
     subtitleLabel.Name = "SubtitleLabel"
-    subtitleLabel.Size = UDim2.new(1, 0, 0, 40)
-    subtitleLabel.Position = UDim2.new(0, 0, 0.5, 0)
+    subtitleLabel.Size = UDim2.new(1, 0, 0, 30)
+    subtitleLabel.Position = UDim2.new(0, 0, 0.42, 0)
     subtitleLabel.BackgroundTransparency = 1
-    subtitleLabel.Text = ""
+    subtitleLabel.Text = "by Witoshik"
     subtitleLabel.TextColor3 = Color3.fromRGB(180, 180, 255)
-    subtitleLabel.TextSize = 24
+    subtitleLabel.TextSize = 16
     subtitleLabel.Font = Enum.Font.Gotham
     subtitleLabel.TextXAlignment = Enum.TextXAlignment.Center
     subtitleLabel.TextYAlignment = Enum.TextYAlignment.Center
     subtitleLabel.TextTransparency = 1
     subtitleLabel.Parent = container
     
-    -- Подпись тень
+    -- Тень подписи
     local subtitleShadow = Instance.new("TextLabel")
     subtitleShadow.Name = "SubtitleShadow"
-    subtitleShadow.Size = UDim2.new(1, 0, 0, 40)
-    subtitleShadow.Position = UDim2.new(0, 2, 0.5, 2)
+    subtitleShadow.Size = UDim2.new(1, 0, 0, 30)
+    subtitleShadow.Position = UDim2.new(0, 1, 0.42, 1)
     subtitleShadow.BackgroundTransparency = 1
-    subtitleShadow.Text = ""
+    subtitleShadow.Text = "by Witoshik"
     subtitleShadow.TextColor3 = Color3.fromRGB(80, 80, 200)
-    subtitleShadow.TextSize = 24
+    subtitleShadow.TextSize = 16
     subtitleShadow.Font = Enum.Font.Gotham
     subtitleShadow.TextXAlignment = Enum.TextXAlignment.Center
     subtitleShadow.TextYAlignment = Enum.TextYAlignment.Center
@@ -171,6 +171,21 @@ local function typeText(label, shadow, text, speed, callback)
     typeChar()
 end
 
+-- ====== ПЛАВНОЕ ПОЯВЛЕНИЕ ПОДПИСИ ======
+local function fadeInSubtitle(subtitleLabel, subtitleShadow)
+    local transparency = 1
+    local function step()
+        if transparency > 0 then
+            transparency = transparency - 0.03
+            subtitleLabel.TextTransparency = transparency
+            subtitleShadow.TextTransparency = transparency
+            task.wait(0.02)
+            step()
+        end
+    end
+    step()
+end
+
 -- ====== ЗАПУСК ЗАГРУЗОЧНОГО ЭКРАНА ======
 local screenGui, titleLabel, titleShadow, subtitleLabel, subtitleShadow, loadingBar, loadingBarGlow, percentLabel = createLoadingScreen()
 
@@ -208,27 +223,15 @@ local function updateLoading()
 end
 
 -- ====== ЗАПУСК АНИМАЦИЙ ======
--- Сначала печатаем "Leek Cheats"
+-- Печатаем "Leek Cheats"
 typeText(titleLabel, titleShadow, "Leek Cheats", 0.07, function()
     -- После завершения печати, показываем подпись и запускаем загрузку
     task.wait(0.2)
     
-    -- Плавное появление подписи
-    local function fadeInSubtitle()
-        local transparency = subtitleLabel.TextTransparency
-        if transparency > 0 then
-            subtitleLabel.TextTransparency = transparency - 0.05
-            subtitleShadow.TextTransparency = transparency - 0.05
-            task.wait(0.02)
-            fadeInSubtitle()
-        end
-    end
-    
-    subtitleLabel.Text = "by Witoshik"
-    subtitleShadow.Text = "by Witoshik"
+    -- Плавное появление подписи "by Witoshik"
     subtitleLabel.TextTransparency = 1
     subtitleShadow.TextTransparency = 1
-    fadeInSubtitle()
+    fadeInSubtitle(subtitleLabel, subtitleShadow)
     
     -- Запускаем полосу загрузки
     task.wait(0.3)
@@ -236,10 +239,8 @@ typeText(titleLabel, titleShadow, "Leek Cheats", 0.07, function()
 end)
 
 -- ====== УДАЛЕНИЕ ЗАГРУЗОЧНОГО ЭКРАНА ======
--- Функция плавного исчезновения
 local function fadeOutLoadingScreen()
     if isLoadingComplete then
-        -- Плавное исчезновение
         local function fadeOut()
             if not screenGui or not screenGui.Parent then return end
             
@@ -264,11 +265,9 @@ local function fadeOutLoadingScreen()
             step()
         end
         
-        -- Небольшая задержка после завершения загрузки
         task.wait(0.5)
         fadeOut()
     else
-        -- Если загрузка еще не завершена, ждем
         task.wait(0.1)
         fadeOutLoadingScreen()
     end
@@ -283,8 +282,6 @@ task.spawn(function()
 end)
 
 -- ====== ОСТАЛЬНОЙ КОД СКРИПТА ======
--- (Весь основной код скрипта здесь, но для краткости оставлю только необходимые части)
-
 -- Загрузка билдера и утилит
 local Builder = loadstring(game:HttpGet("https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/builder.lua"))()
 local UTILS_URL = "https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/utils/"
@@ -964,8 +961,7 @@ end, 2)
 
 mainSection:Paragraph("Status", "Script is " .. (state.enabled and "Active" or "Inactive"), 3)
 
--- (Остальные вкладки аналогичны предыдущей версии, сокращены для читаемости)
--- Вкладка AIMBOT
+-- Остальные вкладки (сокращены для читаемости)
 local aimSection = aimTab:Section("Aimbot Settings")
 aimSection:Paragraph("Info", "Aimbot works ALWAYS | Only alive targets", 0)
 aimSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
@@ -987,7 +983,6 @@ end, 2)
 aimSection:Slider("FOV", 50, 500, state.aimbot.fov, 10, function(val) state.aimbot.fov = val end, 3)
 aimSection:Slider("Smoothness", 0.1, 0.9, state.aimbot.smoothness, 0.05, function(val) state.aimbot.smoothness = val end, 4)
 
--- Вкладка SILENT AIM
 local silentSection = silentTab:Section("Silent Aim Settings")
 silentSection:Paragraph("Info", "Bullets fly to enemies within the radius", 0)
 silentSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
@@ -1030,14 +1025,12 @@ silentSection:Toggle("Team Check", state.silentAim.teamCheck, function(val)
     state.silentAim.teamCheck = val
 end, 5)
 
--- Вкладка TELEPORTS
 local teleSection = teleTab:Section("Teleport Settings")
 teleSection:Toggle("Enable Teleports", state.teleport.enabled, function(val) state.teleport.enabled = val end, 1)
 teleSection:Dropdown("Teleport Mode", {"Front", "Behind", "Random"}, state.teleport.mode, function(val) state.teleport.mode = val end, 2)
 teleSection:Keybind("Teleport Key", state.teleport.key, function(key) state.teleport.key = key end, 3)
 teleSection:Slider("Teleport Distance", 10, 200, state.teleport.distance, 5, function(val) state.teleport.distance = val end, 4)
 
--- Вкладка ESP
 local espSection = espTab:Section("ESP Settings")
 espSection:Paragraph("Info", "Shows players through walls | Hides when dead", 0)
 espSection:Toggle("Enable ESP", state.esp.enabled, function(val)
@@ -1088,7 +1081,6 @@ espSection:ColorPicker("ESP Color", state.esp.color, function(color)
     end
 end, 7)
 
--- Вкладка НАСТРОЕК
 local settingsSection = settingsTab:Section("UI Settings")
 settingsSection:Slider("Menu Transparency", 0, 1, state.transparency, 0.05, function(val)
     state.transparency = val
