@@ -1,9 +1,9 @@
 -- ====== ====== ====== ====== ====== ====== ====== ====== ======
--- ====== ЗАГРУЗОЧНЫЙ ЭКРАН (ЧЕРНО-БЕЛЫЙ НЕОН) ======
+-- ====== ЗАГРУЗОЧНЫЙ ЭКРАН (ПОЛНЫЙ ЭКРАН) ======
 -- ====== ====== ====== ====== ====== ====== ====== ====== ======
 
 local function createLoadingScreen()
-    -- Создаём ScreenGui
+    -- Создаём ScreenGui на весь экран
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "LoadingScreen"
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -13,7 +13,7 @@ local function createLoadingScreen()
     -- ФОН НА ВЕСЬ ЭКРАН (черно-белый градиент)
     local background = Instance.new("Frame")
     background.Name = "Background"
-    background.Size = UDim2.new(1, 0, 1, 0)
+    background.Size = UDim2.new(1, 0, 1, 0) -- ВЕСЬ ЭКРАН
     background.Position = UDim2.new(0, 0, 0, 0)
     background.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
     background.BackgroundTransparency = 0
@@ -29,12 +29,12 @@ local function createLoadingScreen()
     whiteGlow.BorderSizePixel = 0
     whiteGlow.Parent = screenGui
     
-    -- Анимированные частицы (звезды)
+    -- Анимированные частицы (звезды) по всему экрану
     local particles = {}
-    for i = 1, 30 do
+    for i = 1, 40 do
         local particle = Instance.new("Frame")
         particle.Name = "Particle_" .. i
-        particle.Size = UDim2.new(0, math.random(2, 5), 0, math.random(2, 5))
+        particle.Size = UDim2.new(0, math.random(2, 6), 0, math.random(2, 6))
         particle.Position = UDim2.new(math.random(), 0, math.random(), 0)
         particle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         particle.BackgroundTransparency = math.random(30, 80) / 100
@@ -42,17 +42,17 @@ local function createLoadingScreen()
         particle.Parent = screenGui
         particles[i] = {
             frame = particle,
-            speed = 0.0005 + math.random() * 0.002,
+            speed = 0.0003 + math.random() * 0.0015,
             direction = math.random() * 2 * math.pi,
-            size = math.random(2, 5)
+            size = math.random(2, 6)
         }
     end
     
-    -- Контейнер для текста (по центру)
+    -- Контейнер для текста (по центру экрана)
     local container = Instance.new("Frame")
     container.Name = "Container"
-    container.Size = UDim2.new(0, 800, 0, 300)
-    container.Position = UDim2.new(0.5, -400, 0.5, -150)
+    container.Size = UDim2.new(0, 800, 0, 350)
+    container.Position = UDim2.new(0.5, -400, 0.5, -175) -- По центру
     container.BackgroundTransparency = 1
     container.BorderSizePixel = 0
     container.Parent = screenGui
@@ -66,7 +66,6 @@ local function createLoadingScreen()
     textGlow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     textGlow.BackgroundTransparency = 0.92
     textGlow.BorderSizePixel = 2
-    textGlow.BorderColor3 = Color3.fromRGB(255, 255, 255)
     textGlow.BorderColor3 = Color3.fromRGB(200, 200, 200)
     textGlow.Parent = container
     
@@ -134,7 +133,7 @@ local function createLoadingScreen()
     local subtitleLabel = Instance.new("TextLabel")
     subtitleLabel.Name = "SubtitleLabel"
     subtitleLabel.Size = UDim2.new(1, 0, 0, 50)
-    subtitleLabel.Position = UDim2.new(0, 0, 0.62, 0)
+    subtitleLabel.Position = UDim2.new(0, 0, 0.6, 0)
     subtitleLabel.BackgroundTransparency = 1
     subtitleLabel.Text = "by Witoshik"
     subtitleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -148,8 +147,8 @@ local function createLoadingScreen()
     -- Полоса загрузки
     local loadingBarBg = Instance.new("Frame")
     loadingBarBg.Name = "LoadingBarBg"
-    loadingBarBg.Size = UDim2.new(0.6, 0, 0, 6)
-    loadingBarBg.Position = UDim2.new(0.2, 0, 0.8, 0)
+    loadingBarBg.Size = UDim2.new(0.5, 0, 0, 6)
+    loadingBarBg.Position = UDim2.new(0.25, 0, 0.78, 0)
     loadingBarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     loadingBarBg.BackgroundTransparency = 0.5
     loadingBarBg.BorderSizePixel = 1
@@ -179,7 +178,7 @@ local function createLoadingScreen()
     local percentLabel = Instance.new("TextLabel")
     percentLabel.Name = "PercentLabel"
     percentLabel.Size = UDim2.new(1, 0, 0, 30)
-    percentLabel.Position = UDim2.new(0, 0, 0.87, 0)
+    percentLabel.Position = UDim2.new(0, 0, 0.85, 0)
     percentLabel.BackgroundTransparency = 1
     percentLabel.Text = "0%"
     percentLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -188,6 +187,21 @@ local function createLoadingScreen()
     percentLabel.TextXAlignment = Enum.TextXAlignment.Center
     percentLabel.TextYAlignment = Enum.TextYAlignment.Center
     percentLabel.Parent = container
+    
+    -- Текст "LOADING" под процентами
+    local loadingText = Instance.new("TextLabel")
+    loadingText.Name = "LoadingText"
+    loadingText.Size = UDim2.new(1, 0, 0, 20)
+    loadingText.Position = UDim2.new(0, 0, 0.9, 0)
+    loadingText.BackgroundTransparency = 1
+    loadingText.Text = "LOADING"
+    loadingText.TextColor3 = Color3.fromRGB(100, 100, 100)
+    loadingText.TextSize = 12
+    loadingText.Font = Enum.Font.Gotham
+    loadingText.TextXAlignment = Enum.TextXAlignment.Center
+    loadingText.TextYAlignment = Enum.TextYAlignment.Center
+    loadingText.TextTransparency = 0.5
+    loadingText.Parent = container
     
     return screenGui, letters, subtitleLabel, loadingBar, loadingBarGlow, percentLabel, background, whiteGlow, particles
 end
@@ -218,7 +232,6 @@ local function animateLetters(letters, speed, callback)
     local function showNextLetter()
         if index <= #letters then
             local letter = letters[index]
-            -- Плавное появление буквы
             local transparency = 1
             local function fadeIn()
                 if transparency > 0 then
@@ -229,7 +242,6 @@ local function animateLetters(letters, speed, callback)
                     task.wait(0.02)
                     fadeIn()
                 else
-                    -- Эффект вспышки при появлении
                     letter.glow.BackgroundTransparency = 0.3
                     task.wait(0.05)
                     letter.glow.BackgroundTransparency = 0.95
@@ -276,7 +288,7 @@ local screenGui, letters, subtitleLabel, loadingBar, loadingBarGlow, percentLabe
 animateBackground(whiteGlow)
 animateParticles(particles)
 
--- Анимация загрузки
+-- ====== АНИМАЦИЯ ЗАГРУЗКИ (РАБОТАЕТ!) ======
 local loadingProgress = 0
 local loadingSpeed = 0.02
 local isLoadingComplete = false
@@ -323,6 +335,7 @@ animateLetters(letters, 0.05, function()
     fadeInSubtitle()
     
     task.wait(0.3)
+    -- ЗАПУСКАЕМ ЗАГРУЗКУ
     updateLoading()
 end)
 
