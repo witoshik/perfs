@@ -1,3 +1,187 @@
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
+-- ====== ЗАГРУЗОЧНЫЙ ЭКРАН ======
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
+
+local function createLoadingScreen()
+    -- Создаём ScreenGui
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "LoadingScreen"
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.Parent = game:GetService("CoreGui")
+    
+    -- Затемнение фона
+    local background = Instance.new("Frame")
+    background.Name = "Background"
+    background.Size = UDim2.new(1, 0, 1, 0)
+    background.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+    background.BackgroundTransparency = 0.3
+    background.Parent = screenGui
+    
+    -- Главный контейнер
+    local container = Instance.new("Frame")
+    container.Name = "Container"
+    container.Size = UDim2.new(0, 500, 0, 300)
+    container.Position = UDim2.new(0.5, -250, 0.5, -150)
+    container.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    container.BackgroundTransparency = 0.4
+    container.BorderSizePixel = 0
+    container.ClipsDescendants = true
+    container.Parent = screenGui
+    
+    -- Свечение вокруг контейнера
+    local glow = Instance.new("Frame")
+    glow.Name = "Glow"
+    glow.Size = UDim2.new(1, 20, 1, 20)
+    glow.Position = UDim2.new(0.5, -10, 0.5, -10)
+    glow.AnchorPoint = Vector2.new(0.5, 0.5)
+    glow.BackgroundColor3 = Color3.fromRGB(200, 200, 255)
+    glow.BackgroundTransparency = 0.95
+    glow.BorderSizePixel = 2
+    glow.BorderColor3 = Color3.fromRGB(100, 100, 255)
+    glow.Parent = container
+    
+    -- Текст "Leek Cheats" (печатается)
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "TitleLabel"
+    titleLabel.Size = UDim2.new(1, 0, 0, 70)
+    titleLabel.Position = UDim2.new(0, 0, 0.3, -35)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = ""
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 48
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Center
+    titleLabel.TextYAlignment = Enum.TextYAlignment.Center
+    titleLabel.Parent = container
+    
+    -- Подпись "by Witoshik" (появляется после)
+    local subtitleLabel = Instance.new("TextLabel")
+    subtitleLabel.Name = "SubtitleLabel"
+    subtitleLabel.Size = UDim2.new(1, 0, 0, 40)
+    subtitleLabel.Position = UDim2.new(0, 0, 0.6, 0)
+    subtitleLabel.BackgroundTransparency = 1
+    subtitleLabel.Text = ""
+    subtitleLabel.TextColor3 = Color3.fromRGB(180, 180, 255)
+    subtitleLabel.TextSize = 22
+    subtitleLabel.Font = Enum.Font.Gotham
+    subtitleLabel.TextXAlignment = Enum.TextXAlignment.Center
+    subtitleLabel.TextYAlignment = Enum.TextYAlignment.Center
+    subtitleLabel.TextTransparency = 1
+    subtitleLabel.Parent = container
+    
+    -- Анимированная линия загрузки
+    local loadingBar = Instance.new("Frame")
+    loadingBar.Name = "LoadingBar"
+    loadingBar.Size = UDim2.new(0, 0, 0, 3)
+    loadingBar.Position = UDim2.new(0, 0, 0.8, 0)
+    loadingBar.BackgroundColor3 = Color3.fromRGB(150, 150, 255)
+    loadingBar.BackgroundTransparency = 0.3
+    loadingBar.BorderSizePixel = 0
+    loadingBar.Parent = container
+    
+    -- Фон линии загрузки
+    local loadingBarBg = Instance.new("Frame")
+    loadingBarBg.Name = "LoadingBarBg"
+    loadingBarBg.Size = UDim2.new(1, -40, 0, 3)
+    loadingBarBg.Position = UDim2.new(0, 20, 0.8, 0)
+    loadingBarBg.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    loadingBarBg.BackgroundTransparency = 0.5
+    loadingBarBg.BorderSizePixel = 0
+    loadingBarBg.Parent = container
+    
+    -- Перемещаем loadingBar внутрь loadingBarBg
+    loadingBar.Parent = loadingBarBg
+    loadingBar.Position = UDim2.new(0, 0, 0, 0)
+    loadingBar.Size = UDim2.new(0, 0, 1, 0)
+    
+    -- Процент загрузки
+    local percentLabel = Instance.new("TextLabel")
+    percentLabel.Name = "PercentLabel"
+    percentLabel.Size = UDim2.new(1, 0, 0, 25)
+    percentLabel.Position = UDim2.new(0, 0, 0.85, 0)
+    percentLabel.BackgroundTransparency = 1
+    percentLabel.Text = "0%"
+    percentLabel.TextColor3 = Color3.fromRGB(150, 150, 200)
+    percentLabel.TextSize = 14
+    percentLabel.Font = Enum.Font.Gotham
+    percentLabel.TextXAlignment = Enum.TextXAlignment.Center
+    percentLabel.TextYAlignment = Enum.TextYAlignment.Center
+    percentLabel.Parent = container
+    
+    return screenGui, titleLabel, subtitleLabel, loadingBar, percentLabel
+end
+
+-- ====== АНИМАЦИЯ ПЕЧАТИ ТЕКСТА ======
+local function typeText(label, text, speed, callback)
+    local currentText = ""
+    local index = 1
+    local function typeChar()
+        if index <= #text then
+            currentText = currentText .. text:sub(index, index)
+            label.Text = currentText
+            index = index + 1
+            task.wait(speed)
+            return typeChar()
+        else
+            if callback then callback() end
+        end
+    end
+    typeChar()
+end
+
+-- ====== ЗАПУСК ЗАГРУЗОЧНОГО ЭКРАНА ======
+local screenGui, titleLabel, subtitleLabel, loadingBar, percentLabel = createLoadingScreen()
+
+-- Анимация загрузки
+local loadingProgress = 0
+local loadingSpeed = 0.02
+
+local function updateLoading()
+    loadingProgress = loadingProgress + 1
+    if loadingProgress <= 100 then
+        -- Обновляем полосу загрузки
+        local barWidth = (loadingProgress / 100) * (loadingBar.Parent.Size.X.Offset - 0)
+        loadingBar.Size = UDim2.new(0, barWidth, 1, 0)
+        
+        -- Обновляем проценты
+        percentLabel.Text = loadingProgress .. "%"
+        
+        -- Меняем цвет полосы
+        local r = math.floor(150 + (loadingProgress / 100) * 105)
+        local g = math.floor(150 + (loadingProgress / 100) * 105)
+        loadingBar.BackgroundColor3 = Color3.fromRGB(r, g, 255)
+        
+        task.wait(loadingSpeed)
+        updateLoading()
+    end
+end
+
+-- ====== ЗАПУСК АНИМАЦИЙ ======
+-- Сначала печатаем "Leek Cheats"
+typeText(titleLabel, "Leek Cheats", 0.08, function()
+    -- После завершения печати, показываем подпись и запускаем загрузку
+    task.wait(0.3)
+    
+    -- Плавное появление подписи
+    local function fadeInSubtitle()
+        local transparency = subtitleLabel.TextTransparency
+        if transparency > 0 then
+            subtitleLabel.TextTransparency = transparency - 0.05
+            task.wait(0.02)
+            fadeInSubtitle()
+        end
+    end
+    
+    subtitleLabel.Text = "by Witoshik"
+    subtitleLabel.TextTransparency = 1
+    fadeInSubtitle()
+    
+    -- Запускаем полосу загрузки
+    task.wait(0.3)
+    updateLoading()
+end)
+
+-- ====== ОСНОВНОЙ СКРИПТ ======
 -- Загрузка билдера и утилит
 local Builder = loadstring(game:HttpGet("https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/builder.lua"))()
 local UTILS_URL = "https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/utils/"
@@ -31,7 +215,7 @@ local blackWhiteTheme = {
     Bad = Color3.fromRGB(255, 100, 100),
 }
 
--- Создаём окно с новым названием
+-- Создаём окно
 local window = Builder.new({
     Title = "Leek Cheats",
     ToggleKey = Enum.KeyCode.Home,
@@ -66,9 +250,6 @@ local window = Builder.new({
 -- Регистрируем тему
 window:RegisterTheme("BlackWhite", blackWhiteTheme)
 window:SetTheme("BlackWhite")
-
--- Добавляем подпись "by Witoshik" под названием
--- (используем Paragraph в главной вкладке)
 
 -- Состояние скрипта
 local state = {
@@ -135,7 +316,6 @@ local mouse = nil
 local fovCircle = nil
 local hookedWeapons = {}
 local silentTarget = nil
-local deadPlayers = {}
 
 -- Получение мыши
 pcall(function()
@@ -657,9 +837,9 @@ local teleTab = window:CreateTab("Teleports", "lucide-map-pin")
 local espTab = window:CreateTab("ESP", "lucide-eye")
 local settingsTab = window:CreateTab("Settings", "lucide-settings")
 
--- Вкладка MAIN с подписью
+-- Вкладка MAIN
 local mainSection = mainTab:Section("Control Panel")
-mainSection:Paragraph("", "by Witoshik", 0) -- Подпись под названием
+mainSection:Paragraph("", "by Witoshik", 0)
 mainSection:Toggle("Enable Script", state.enabled, function(val)
     state.enabled = val
     if not val then
@@ -681,11 +861,11 @@ end, 2)
 
 mainSection:Paragraph("Status", "Script is " .. (state.enabled and "Active" or "Inactive"), 3)
 
+-- Остальные вкладки (сокращены для читаемости, но функционал тот же)
 -- Вкладка AIMBOT
 local aimSection = aimTab:Section("Aimbot Settings")
 aimSection:Paragraph("Info", "Aimbot works ALWAYS | Only alive targets", 0)
 aimSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
-
 aimSection:Toggle("Enable Aimbot", state.aimbot.enabled, function(val)
     state.aimbot.enabled = val
     if val then
@@ -701,20 +881,13 @@ aimSection:Toggle("Enable Aimbot", state.aimbot.enabled, function(val)
         end
     end
 end, 2)
-
-aimSection:Slider("FOV", 50, 500, state.aimbot.fov, 10, function(val)
-    state.aimbot.fov = val
-end, 3)
-
-aimSection:Slider("Smoothness", 0.1, 0.9, state.aimbot.smoothness, 0.05, function(val)
-    state.aimbot.smoothness = val
-end, 4)
+aimSection:Slider("FOV", 50, 500, state.aimbot.fov, 10, function(val) state.aimbot.fov = val end, 3)
+aimSection:Slider("Smoothness", 0.1, 0.9, state.aimbot.smoothness, 0.05, function(val) state.aimbot.smoothness = val end, 4)
 
 -- Вкладка SILENT AIM
 local silentSection = silentTab:Section("Silent Aim Settings")
 silentSection:Paragraph("Info", "Bullets fly to enemies within the radius", 0)
 silentSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
-
 silentSection:Toggle("Enable Silent Aim", state.silentAim.enabled, function(val)
     state.silentAim.enabled = val
     if val then
@@ -726,7 +899,7 @@ silentSection:Toggle("Enable Silent Aim", state.silentAim.enabled, function(val)
                 updateFovCircle()
             end)
         end
-        print("[Silent Aim] Enabled - Bullets fly to targets in radius!")
+        print("[Silent Aim] Enabled!")
     else
         if mainMaid._silentTask then
             mainMaid._silentTask:Disconnect()
@@ -737,13 +910,10 @@ silentSection:Toggle("Enable Silent Aim", state.silentAim.enabled, function(val)
         print("[Silent Aim] Disabled")
     end
 end, 2)
-
 silentSection:Slider("Silent FOV", 50, 500, state.silentAim.fov, 10, function(val)
     state.silentAim.fov = val
     updateFovCircle()
-    print("Silent FOV:", val)
 end, 3)
-
 silentSection:Toggle("Show FOV Circle", state.silentAim.showCircle, function(val)
     state.silentAim.showCircle = val
     if val then
@@ -752,41 +922,27 @@ silentSection:Toggle("Show FOV Circle", state.silentAim.showCircle, function(val
     else
         if fovCircle then fovCircle.Visible = false end
     end
-    print("FOV Circle:", val and "ON" or "OFF")
 end, 4)
-
 silentSection:Toggle("Team Check", state.silentAim.teamCheck, function(val)
     state.silentAim.teamCheck = val
-    print("Team check:", val and "ON" or "OFF")
 end, 5)
-
 silentSection:Paragraph("How it works", 
     "1. Finds nearest ALIVE enemy in FOV\n" ..
     "2. Intercepts your shots\n" ..
     "3. Redirects bullets to HEAD\n" ..
     "4. Works through walls!\n" ..
-    "5. Your aim stays still\n" ..
-    "6. NO aim movement!", 6)
+    "5. Your aim stays still", 6)
 
 -- Вкладка TELEPORTS
 local teleSection = teleTab:Section("Teleport Settings")
-teleSection:Toggle("Enable Teleports", state.teleport.enabled, function(val)
-    state.teleport.enabled = val
-end, 1)
-teleSection:Dropdown("Teleport Mode", {"Front", "Behind", "Random"}, state.teleport.mode, function(val)
-    state.teleport.mode = val
-end, 2)
-teleSection:Keybind("Teleport Key", state.teleport.key, function(key)
-    state.teleport.key = key
-end, 3)
-teleSection:Slider("Teleport Distance", 10, 200, state.teleport.distance, 5, function(val)
-    state.teleport.distance = val
-end, 4)
+teleSection:Toggle("Enable Teleports", state.teleport.enabled, function(val) state.teleport.enabled = val end, 1)
+teleSection:Dropdown("Teleport Mode", {"Front", "Behind", "Random"}, state.teleport.mode, function(val) state.teleport.mode = val end, 2)
+teleSection:Keybind("Teleport Key", state.teleport.key, function(key) state.teleport.key = key end, 3)
+teleSection:Slider("Teleport Distance", 10, 200, state.teleport.distance, 5, function(val) state.teleport.distance = val end, 4)
 
 -- Вкладка ESP
 local espSection = espTab:Section("ESP Settings")
 espSection:Paragraph("Info", "Shows players through walls | Hides when dead", 0)
-
 espSection:Toggle("Enable ESP", state.esp.enabled, function(val)
     state.esp.enabled = val
     if val then
@@ -811,13 +967,8 @@ espSection:Toggle("Enable ESP", state.esp.enabled, function(val)
         end
     end
 end, 1)
-
-espSection:Toggle("Boxes", state.esp.boxes, function(val)
-    state.esp.boxes = val
-end, 2)
-espSection:Toggle("Names", state.esp.names, function(val)
-    state.esp.names = val
-end, 3)
+espSection:Toggle("Boxes", state.esp.boxes, function(val) state.esp.boxes = val end, 2)
+espSection:Toggle("Names", state.esp.names, function(val) state.esp.names = val end, 3)
 espSection:Toggle("Skeleton", state.esp.skeleton, function(val)
     state.esp.skeleton = val
     if not val then
@@ -828,12 +979,8 @@ espSection:Toggle("Skeleton", state.esp.skeleton, function(val)
         end
     end
 end, 4)
-espSection:Toggle("Health Bar", state.esp.healthBar, function(val)
-    state.esp.healthBar = val
-end, 5)
-espSection:Slider("Distance", 50, 5000, state.esp.distance, 5, function(val)
-    state.esp.distance = val
-end, 6)
+espSection:Toggle("Health Bar", state.esp.healthBar, function(val) state.esp.healthBar = val end, 5)
+espSection:Slider("Distance", 50, 5000, state.esp.distance, 5, function(val) state.esp.distance = val end, 6)
 espSection:ColorPicker("ESP Color", state.esp.color, function(color)
     state.esp.color = color
     for _, esp in pairs(espObjects) do
@@ -854,7 +1001,6 @@ settingsSection:Slider("Blur Size", 0, 24, state.blurSize, 1, function(val)
     state.blurSize = val
     window.BlurSize = val
 end, 2)
-
 settingsSection:Keybind("Toggle Menu Key", state.binds.toggleMenu, function(key)
     if key then
         state.binds.toggleMenu = key
@@ -874,7 +1020,6 @@ settingsSection:Keybind("Disable All Key", state.binds.disableAll, function(key)
         print("[Settings] Disable all key changed to:", key.Name)
     end
 end, 5)
-
 settingsSection:Paragraph("Current Binds", 
     "Menu: " .. tostring(state.binds.toggleMenu.Name) .. "\n" ..
     "Unlock Mouse: " .. tostring(state.binds.unlockMouse.Name) .. "\n" ..
@@ -989,6 +1134,40 @@ end)
 updateTransparency()
 window.BlurSize = state.blurSize
 createFovCircle()
+
+-- ====== УДАЛЯЕМ ЗАГРУЗОЧНЫЙ ЭКРАН ПОСЛЕ ЗАВЕРШЕНИЯ ======
+-- Ждем завершения загрузки и удаляем экран
+task.spawn(function()
+    -- Ждем пока загрузка дойдет до 100%
+    while loadingProgress < 100 do
+        task.wait(0.05)
+    end
+    
+    -- Небольшая задержка для красоты
+    task.wait(0.5)
+    
+    -- Плавное исчезновение
+    local function fadeOut()
+        local transparency = screenGui.BackgroundTransparency
+        if transparency < 1 then
+            screenGui.BackgroundTransparency = transparency + 0.02
+            for _, child in ipairs(screenGui:GetChildren()) do
+                if child:IsA("Frame") and child.Name ~= "Background" then
+                    child.BackgroundTransparency = child.BackgroundTransparency + 0.02
+                end
+                if child:IsA("TextLabel") then
+                    child.TextTransparency = child.TextTransparency + 0.02
+                end
+            end
+            task.wait(0.02)
+            fadeOut()
+        else
+            screenGui:Destroy()
+        end
+    end
+    
+    fadeOut()
+end)
 
 -- ====== ИНФОРМАЦИЯ ======
 print("====================================")
