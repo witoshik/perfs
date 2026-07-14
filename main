@@ -71,24 +71,36 @@ window:SetTheme("BlackWhite")
 local state = {
     enabled = false,
     mouseUnlock = false,
+    -- Настройки биндов
+    binds = {
+        toggleMenu = Enum.KeyCode.Home,
+        unlockMouse = Enum.KeyCode.F1,
+        disableAll = Enum.KeyCode.F8,
+    },
+    -- Настройки прозрачности
+    transparency = 0.3,
+    blurSize = 8,
+    -- Aimbot
     aimbot = {
         enabled = false,
         fov = 360,
         smoothness = 0.3,
         targetPart = "Head",
         mode = "Closest",
-        visibleCheck = false, -- ОТКЛЮЧЕНА ПРОВЕРКА ВИДИМОСТИ (АИМ ЧЕРЕЗ СТЕНЫ)
+        visibleCheck = false,
         teamCheck = false,
         silentAim = false,
         silentFov = 360,
         silentVisible = false,
     },
+    -- Teleports
     teleport = {
         enabled = false,
         key = Enum.KeyCode.T,
         distance = 50,
         mode = "Front",
     },
+    -- ESP
     esp = {
         enabled = false,
         boxes = true,
@@ -126,7 +138,15 @@ pcall(function()
     mouse = LocalPlayer:GetMouse()
 end)
 
--- ====== РАЗБЛОКИРОВКА МЫШИ (РАБОЧАЯ) ======
+-- ====== ФУНКЦИЯ ОБНОВЛЕНИЯ ПРОЗРАЧНОСТИ ======
+local function updateTransparency()
+    if window and window.Gui then
+        window.Gui.BackgroundTransparency = state.transparency
+        window.BackdropTransparency = state.transparency
+    end
+end
+
+-- ====== РАЗБЛОКИРОВКА МЫШИ ======
 local function toggleMouseUnlock(unlock)
     if unlock then
         UserInputService.MouseBehavior = Enum.MouseBehavior.Default
@@ -140,10 +160,20 @@ local function toggleMouseUnlock(unlock)
         print("[Mouse] UNLOCKED")
     else
         UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-UserInputService.MouseIconEnabled = false
+        UserInputService.MouseIconEnabled = false
         GuiService.MouseIconEnabled = false
         print("[Mouse] LOCKED")
     end
+end
+
+-- ====== ФУНКЦИЯ ПЕРЕБИНДИНГА ======
+local function rebindKey(oldKey, newKey)
+    -- Проверяем, не занята ли клавиша
+    if newKey == state.binds.toggleMenu or newKey == state.binds.unlockMouse or newKey == state.binds.disableAll then
+        print("[Bind] Key already in use!")
+        return false
+    end
+    return true
 end
 
 -- ====== ESP ======
@@ -274,7 +304,7 @@ local function updateESP()
             esp.Name.Text = player.Name
         else
             esp.Name.Visible = false
-end
+        end
         
         if state.esp.healthBar then
             esp.Health.Visible = true
@@ -320,7 +350,7 @@ end
     end
 end
 
--- ====== ФУНКЦИИ АИМБОТА (ЧЕРЕЗ СТЕНЫ) ======
+-- ====== ФУНКЦИИ АИМБОТА ======
 local function getPlayers()
     local players = {}
     for _, player in ipairs(Players:GetPlayers()) do
@@ -348,7 +378,6 @@ local function getTargetPart(player)
     return part
 end
 
--- ====== ПОИСК ЦЕЛИ БЕЗ ПРОВЕРКИ ВИДИМОСТИ (ЧЕРЕЗ СТЕНЫ) ======
 local function findBestTarget(fov, checkVisible)
     if not LocalPlayer.Character then return nil end
     
@@ -367,7 +396,6 @@ local function findBestTarget(fov, checkVisible)
         if targetPart then
             local screenPos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
             
-            -- checkVisible = false => аимбот работает через стены
             if checkVisible and not onScreen then
                 continue
             end
@@ -386,14 +414,13 @@ local function getSilentAimTarget()
     return findBestTarget(state.aimbot.silentFov, false)
 end
 
--- ====== АИМБОТ (ВСЕГДА АКТИВЕН, ЧЕРЕЗ СТЕНЫ) ======
 local function aimbotLoop()
     if not state.enabled then return end
     if not state.aimbot.enabled then return end
     
     local target
     if state.aimbot.mode == "Closest" then
-target = findBestTarget(state.aimbot.fov, state.aimbot.visibleCheck) -- visibleCheck = false
+        target = findBestTarget(state.aimbot.fov, state.aimbot.visibleCheck)
     else
         if mouse and mouse.Target then
             local character = mouse.Target.Parent
@@ -494,6 +521,7 @@ local aimTab = window:CreateTab("Aimbot", "lucide-crosshair")
 local silentTab = window:CreateTab("Silent Aim", "lucide-bullseye")
 local teleTab = window:CreateTab("Teleports", "lucide-map-pin")
 local espTab = window:CreateTab("ESP", "lucide-eye")
+local settingsTab = window:CreateTab("Settings", "lucide-settings")
 
 -- Вкладка MAIN
 local mainSection = mainTab:Section("Control Panel")
@@ -511,8 +539,8 @@ mainSection:Toggle("Enable Script", state.enabled, function(val)
     end
 end, 1)
 
-mainSection:Toggle("Unlock Mouse (F1)", state.mouseUnlock, function(val)
-state.mouseUnlock = val
+mainSection:Toggle("Unlock Mouse", state.mouseUnlock, function(val)
+    state.mouseUnlock = val
     toggleMouseUnlock(val)
 end, 2)
 
@@ -637,7 +665,7 @@ espSection:Toggle("Enable ESP", state.esp.enabled, function(val)
             mainMaid._espTask:Disconnect()
             mainMaid._espTask = nil
         end
-for _, esp in pairs(espObjects) do
+        for _, esp in pairs(espObjects) do
             esp.Box.Visible = false
             esp.Name.Visible = false
             esp.Health.Visible = false
@@ -685,12 +713,61 @@ espSection:ColorPicker("ESP Color", state.esp.color, function(color)
     end
 end, 7)
 
--- ====== ОБРАБОТКА КЛАВИШ ======
+-- ====== ВКЛАДКА НАСТРОЕК ======
+local settingsSection = settingsTab:Section("UI Settings")
+settingsSection:Paragraph("Info", "Customize menu appearance and controls", 0)
+
+-- Прозрачность
+settingsSection:Slider("Menu Transparency", 0, 1, state.transparency, 0.05, function(val)
+    state.transparency = val
+    updateTransparency()
+    print("[Settings] Transparency:", val)
+end, 1)
+
+-- Размер размытия
+settingsSection:Slider("Blur Size", 0, 24, state.blurSize, 1, function(val)
+    state.blurSize = val
+    window.BlurSize = val
+    print("[Settings] Blur size:", val)
+end, 2)
+
+-- Бинд для открытия меню
+settingsSection:Keybind("Toggle Menu Key", state.binds.toggleMenu, function(key)
+    if key then
+        state.binds.toggleMenu = key
+        window.ToggleKey = key
+        print("[Settings] Menu key changed to:", key.Name)
+    end
+end, 3)
+
+-- Бинд для разблокировки мыши
+settingsSection:Keybind("Unlock Mouse Key", state.binds.unlockMouse, function(key)
+    if key then
+        state.binds.unlockMouse = key
+        print("[Settings] Unlock mouse key changed to:", key.Name)
+    end
+end, 4)
+
+-- Бинд для полного выключения
+settingsSection:Keybind("Disable All Key", state.binds.disableAll, function(key)
+    if key then
+        state.binds.disableAll = key
+        print("[Settings] Disable all key changed to:", key.Name)
+    end
+end, 5)
+
+-- Информация о биндах
+settingsSection:Paragraph("Current Binds", 
+    "Menu: " .. tostring(state.binds.toggleMenu.Name) .. "\n" ..
+    "Unlock Mouse: " .. tostring(state.binds.unlockMouse.Name) .. "\n" ..
+    "Disable All: " .. tostring(state.binds.disableAll.Name), 6)
+
+-- ====== ОБРАБОТКА КЛАВИШ (С УЧЕТОМ БИНДОВ) ======
 mainMaid:Give(UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     
-    -- ====== РАЗБЛОКИРОВКА МЫШИ (F1) ======
-    if input.KeyCode == Enum.KeyCode.F1 then
+    -- ====== РАЗБЛОКИРОВКА МЫШИ (ПО НАСТРОЕННОЙ КЛАВИШЕ) ======
+    if input.KeyCode == state.binds.unlockMouse then
         state.mouseUnlock = not state.mouseUnlock
         toggleMouseUnlock(state.mouseUnlock)
         print("[Mouse] Toggled:", state.mouseUnlock and "UNLOCKED" or "LOCKED")
@@ -705,8 +782,8 @@ mainMaid:Give(UserInputService.InputBegan:Connect(function(input, gameProcessed)
         end
     end
     
-    -- ====== ПОЛНОЕ ВЫКЛЮЧЕНИЕ (F8) ======
-    if input.KeyCode == Enum.KeyCode.F8 then
+    -- ====== ПОЛНОЕ ВЫКЛЮЧЕНИЕ (ПО НАСТРОЕННОЙ КЛАВИШЕ) ======
+    if input.KeyCode == state.binds.disableAll then
         print("[F8] Disabling ALL features...")
         
         state.enabled = false
@@ -744,7 +821,7 @@ mainMaid:Give(UserInputService.InputBegan:Connect(function(input, gameProcessed)
             toggleMouseUnlock(false)
         end
         
-        print("[F8] ALL features disabled!")
+        print("[DISABLE] ALL features disabled!")
     end
 end))
 
@@ -778,8 +855,7 @@ window:OnDestroy(function()
     for _, esp in pairs(espObjects) do
         if esp.Box then esp.Box:Remove() end
         if esp.Name then esp.Name:Remove() end
-        if
-esp.Health then esp.Health:Remove() end
+        if esp.Health then esp.Health:Remove() end
         for _, bone in pairs(esp.Skeleton) do
             if bone then bone:Remove() end
         end
@@ -789,17 +865,21 @@ esp.Health then esp.Health:Remove() end
     print("Witoshi Cheat's unloaded successfully!")
 end)
 
+-- ====== ПРИМЕНЯЕМ НАЧАЛЬНЫЕ НАСТРОЙКИ ======
+updateTransparency()
+window.BlurSize = state.blurSize
+
 -- ====== ИНФОРМАЦИЯ ======
 print("====================================")
 print("Witoshi Cheat's loaded successfully!")
 print("====================================")
-print("Press HOME to toggle GUI")
+print("Press " .. tostring(state.binds.toggleMenu.Name) .. " to toggle GUI")
 print("AIMBOT: Works ALWAYS and THROUGH WALLS")
-print("MOUSE UNLOCK: Press F1")
+print("MOUSE UNLOCK: Press " .. tostring(state.binds.unlockMouse.Name))
 print("SILENT AIM: Shoots through walls")
 print("TELEPORT: Press T to teleport")
 print("ESP: Shows players through walls")
-print("DISABLE ALL: Press F8")
+print("DISABLE ALL: Press " .. tostring(state.binds.disableAll.Name))
 print("====================================")
 
 return window
