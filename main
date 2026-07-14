@@ -31,9 +31,9 @@ local blackWhiteTheme = {
     Bad = Color3.fromRGB(255, 100, 100),
 }
 
--- Создаём окно
+-- Создаём окно с новым названием
 local window = Builder.new({
-    Title = "Witoshi Cheat's",
+    Title = "Leek Cheats",
     ToggleKey = Enum.KeyCode.Home,
     Animation = "Default",
     TabAnimation = "Fade",
@@ -58,7 +58,7 @@ local window = Builder.new({
     MaxVisibleTabs = 6,
     Config = {
         Enabled = true,
-        Folder = "WitoshiCheats",
+        Folder = "LeekCheats",
         File = "config.json",
     },
 })
@@ -66,6 +66,9 @@ local window = Builder.new({
 -- Регистрируем тему
 window:RegisterTheme("BlackWhite", blackWhiteTheme)
 window:SetTheme("BlackWhite")
+
+-- Добавляем подпись "by Witoshik" под названием
+-- (используем Paragraph в главной вкладке)
 
 -- Состояние скрипта
 local state = {
@@ -206,10 +209,8 @@ local function isPlayerAlive(player)
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not humanoid then return false end
     
-    -- Проверяем здоровье
     if humanoid.Health <= 0 then return false end
     
-    -- Проверяем состояние
     local state = humanoid:GetState()
     if state == Enum.HumanoidStateType.Dead then return false end
     
@@ -241,7 +242,7 @@ local function getPlayers()
     for _, player in ipairs(Players:GetPlayers()) do
         if player == LocalPlayer then continue end
         if isTeamMate(player) then continue end
-        if not isPlayerAlive(player) then continue end -- Пропускаем мертвых
+        if not isPlayerAlive(player) then continue end
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             table.insert(players, player)
         end
@@ -264,7 +265,7 @@ local function getSilentAimTarget()
     
     for _, player in ipairs(getPlayers()) do
         if isTeamMate(player) then continue end
-        if not isPlayerAlive(player) then continue end -- Пропускаем мертвых
+        if not isPlayerAlive(player) then continue end
         
         local targetPart = getTargetPart(player)
         if targetPart then
@@ -286,7 +287,6 @@ local function hookWeapon(tool)
     if hookedWeapons[tool] then return end
     
     for _, child in ipairs(tool:GetChildren()) do
-        -- Перехватываем RemoteEvent
         if child:IsA("RemoteEvent") then
             local oldFire = child.FireServer
             
@@ -328,7 +328,6 @@ local function hookWeapon(tool)
             hookedWeapons[tool] = true
         end
         
-        -- Перехватываем RemoteFunction
         if child:IsA("RemoteFunction") then
             local oldInvoke = child.InvokeServer
             
@@ -379,7 +378,7 @@ local function checkWeapons()
     end
 end
 
--- ====== ESP (С ИСЧЕЗНОВЕНИЕМ ПОСЛЕ СМЕРТИ) ======
+-- ====== ESP ======
 local function createESPObject(player)
     if not hasDrawing then return end
     
@@ -466,10 +465,8 @@ local function updateESP()
     for _, player in ipairs(Players:GetPlayers()) do
         if player == LocalPlayer then continue end
         
-        -- ====== ПРОВЕРКА НА СМЕРТЬ ======
         local isDead = not isPlayerAlive(player)
         
-        -- Если игрок мертв - скрываем все его ESP объекты
         if isDead or isTeamMate(player) then
             if espObjects[player] then
                 local esp = espObjects[player]
@@ -502,7 +499,6 @@ local function updateESP()
         end
         if not esp then continue end
         
-        -- Если игрок был мертв, а теперь жив - обновляем
         esp.isDead = false
         
         local screenPos, onScreen = camera:WorldToViewportPoint(rootPart.Position)
@@ -520,7 +516,6 @@ local function updateESP()
         local topLeft = Vector2.new(screenPos.X - width/2, screenPos.Y - height/2)
         local bottomRight = Vector2.new(screenPos.X + width/2, screenPos.Y + height/2)
         
-        -- Обновляем бокс
         if state.esp.boxes then
             esp.Box.Visible = true
             esp.Box.Position = topLeft
@@ -531,7 +526,6 @@ local function updateESP()
             esp.Box.Visible = false
         end
         
-        -- Обновляем имя
         if state.esp.names then
             esp.Name.Visible = true
             esp.Name.Position = Vector2.new(screenPos.X, topLeft.Y - 22)
@@ -540,7 +534,6 @@ local function updateESP()
             esp.Name.Visible = false
         end
         
-        -- Обновляем здоровье
         if state.esp.healthBar then
             esp.Health.Visible = true
             local healthPercent = humanoid.Health / humanoid.MaxHealth
@@ -556,7 +549,6 @@ local function updateESP()
             esp.Health.Visible = false
         end
         
-        -- ====== ОБНОВЛЯЕМ СКЕЛЕТ (ТОЛЬКО ДЛЯ ЖИВЫХ) ======
         if state.esp.skeleton and not esp.isDead then
             local bones = getBonePositions(character)
             for i, bone in ipairs(bones) do
@@ -599,7 +591,7 @@ local function findBestTarget(fov, checkVisible)
     
     for _, player in ipairs(getPlayers()) do
         if isTeamMate(player) then continue end
-        if not isPlayerAlive(player) then continue end -- Пропускаем мертвых
+        if not isPlayerAlive(player) then continue end
         
         local targetPart = getTargetPart(player)
         if targetPart then
@@ -634,7 +626,7 @@ end
 -- ====== ТЕЛЕПОРТ ======
 local function teleportToPlayer(targetPlayer)
     if not LocalPlayer.Character or isTeamMate(targetPlayer) then return end
-    if not isPlayerAlive(targetPlayer) then return end -- Не телепортируемся к мертвым
+    if not isPlayerAlive(targetPlayer) then return end
     
     local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return end
@@ -665,8 +657,9 @@ local teleTab = window:CreateTab("Teleports", "lucide-map-pin")
 local espTab = window:CreateTab("ESP", "lucide-eye")
 local settingsTab = window:CreateTab("Settings", "lucide-settings")
 
--- Вкладка MAIN
+-- Вкладка MAIN с подписью
 local mainSection = mainTab:Section("Control Panel")
+mainSection:Paragraph("", "by Witoshik", 0) -- Подпись под названием
 mainSection:Toggle("Enable Script", state.enabled, function(val)
     state.enabled = val
     if not val then
@@ -989,7 +982,7 @@ window:OnDestroy(function()
     espObjects = {}
     hookedWeapons = {}
     mainMaid:Cleanup()
-    print("Witoshi Cheat's unloaded successfully!")
+    print("Leek Cheats unloaded successfully!")
 end)
 
 -- ====== ПРИМЕНЯЕМ НАЧАЛЬНЫЕ НАСТРОЙКИ ======
@@ -999,7 +992,8 @@ createFovCircle()
 
 -- ====== ИНФОРМАЦИЯ ======
 print("====================================")
-print("Witoshi Cheat's loaded successfully!")
+print("Leek Cheats loaded successfully!")
+print("by Witoshik")
 print("====================================")
 print("Press " .. tostring(state.binds.toggleMenu.Name) .. " to toggle GUI")
 print("AIMBOT: Works ALWAYS | Only alive targets")
