@@ -1,242 +1,190 @@
--- Загружаем библиотеку Moonware
+-- Загрузка конструктора Moonware
 local Builder = loadstring(game:HttpGet("https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/builder.lua"))()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
 
--- Создаем окно
+-- Создание главного окна
 local window = Builder.new({
-    Title = "MM2 Enhanced",
+    Title = "Super Script v2",
     ToggleKey = Enum.KeyCode.RightControl,
-    Width = 500,
-    Height = 400,
+    Animation = "Default",
+    TabAnimation = "Fade",
+    TabAnimationEnabled = true,
+    TabAnimationDuration = 0.18,
+    Responsive = true,
+    ResponsiveMargin = 16,
+    MinScale = 0.58,
+    MaxScale = 1,
+    BlurSize = 0,
+    BackdropTransparency = 0.68,
+    Width = 600,
+    Height = 440,
+    SidebarWidth = 144,
+    TabHeight = 38,
+    TabGap = 8,
+    Config = {
+        Enabled = true,
+        Folder = "SuperScript",
+        File = "config.json",
+    },
 })
 
--- Создаем вкладку
-local mainTab = window:CreateTab("Main", "lucide-home")
-
--- Секция для функций
-local functionsSection = mainTab:Section("Functions")
-
--- Состояния
+-- === СОСТОЯНИЯ ===
 local state = {
-    wallhack = false,
-    showRoles = true,
-    espEnabled = false,
+    speedHack = false,
+    walkSpeed = 50,
+    aimBot = false,
+    aimSmoothness = 0.3,
+    aimFov = 200,
+    isHackActive = false, -- Флаг для защиты от повторного запуска
 }
 
--- Переменные для ESP
-local espObjects = {}
-local espLoop = nil
-local playerCheckLoop = nil
+local player = Players.LocalPlayer
+local character = player.Character
+local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 
--- ====== ФУНКЦИЯ ОПРЕДЕЛЕНИЯ РОЛИ ======
-local function getPlayerRole(player)
-    if not player or not player.Character then
-        return "Unknown", Color3.fromRGB(128, 128, 128)
-    end
-    
-    local character = player.Character
-    
-    -- Проверяем наличие оружия
-    for _, child in ipairs(character:GetChildren()) do
-        if child:IsA("Tool") then
-            local toolName = child.Name:lower()
-            -- Убийца (нож)
-            if toolName:find("knife") or toolName:find("murder") or toolName:find("blade") or toolName:find("dagger") then
-                return "Murderer", Color3.fromRGB(255, 0, 0)
-            end
-            -- Шериф (пистолет)
-            if toolName:find("gun") or toolName:find("pistol") or toolName:find("revolver") or toolName:find("sheriff") then
-                return "Sheriff", Color3.fromRGB(0, 100, 255)
+-- === ФУНКЦИИ ДЛЯ АИМА ===
+local function getClosestPlayer()
+    local closest = nil
+    local shortestDist = state.aimFov
+    local mouse = player:GetMouse()
+    local camera = workspace.CurrentCamera
+
+    for _, target in ipairs(Players:GetPlayers()) do
+        if target ~= player and target.Character and target.Character:FindFirstChild("Head") then
+            local headPos = camera:WorldToViewportPoint(target.Character.Head.Position)
+            if headPos then
+                local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(headPos.X, headPos.Y)).Magnitude
+                if distance < shortestDist then
+                    shortestDist = distance
+                    closest = target
+                end
             end
         end
     end
-    
-    -- Проверка по аксессуарам (хэты)
-    for _, child in ipairs(character:GetChildren()) do
-        if child:IsA("Accessory") or child:IsA("Hat") then
-            local name = child.Name:lower()
-            if name:find("sheriff") or name:find("badge") then
-                return "Sheriff", Color3.fromRGB(0, 100, 255)
-            end
-            if name:find("knife") or name:find("murder") then
-                return "Murderer", Color3.fromRGB(255, 0, 0)
-            end
-        end
-    end
-    
-    return "Innocent", Color3.fromRGB(0, 255, 0)
+    return closest
 end
 
--- ====== СОЗДАНИЕ ESP ======
-local function createESP(player)
-    if not player or not player.Character then return end
-    
-    local character = player.Character
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return end
-    
-    -- Получаем роль и цвет
-    local role, roleColor = getPlayerRole(player)
-    
-    -- ====== WALLHACK (точка над игроком) ======
-    if state.wallhack then
-        local espPoint = Instance.new("Part")
-        espPoint.Name = "ESP_Point"
-        espPoint.Size = Vector3.new(2, 2, 2)
-        espPoint.Shape = Enum.PartType.Ball
-        espPoint.Material = Enum.Material.Neon
-        espPoint.Color = roleColor
-        espPoint.Transparency = 0.4
-        espPoint.Anchored = true
-        espPoint.CanCollide = false
-        espPoint.Parent = workspace
-        
-        -- Привязываем к игроку
-        local weld = Instance.new("Weld")
-        weld.Part0 = rootPart
-        weld.Part1 = espPoint
-        weld.C0 = CFrame.new(0, 3.5, 0)
-        weld.Parent = espPoint
-        
-        table.insert(espObjects, espPoint)
-        table.insert(espObjects, weld)
-    end
-    
-    -- ====== ОТОБРАЖЕНИЕ РОЛЕЙ ======
-    if state.showRoles then
-        local billboard = Instance.new("BillboardGui")
-        billboard.Name = "RoleDisplay_" .. player.Name
-        billboard.Size = UDim2.new(0, 150, 0, 40)
-        billboard.AlwaysOnTop = true
-        billboard.MaxDistance = 200
-        billboard.Adornee = rootPart
-        billboard.Parent = rootPart
-        
-        local textLabel = Instance.new("TextLabel")
-        textLabel.Name = "RoleText"
-        textLabel.Size = UDim2.new(1, 0, 1, 0)
-        textLabel.BackgroundTransparency = 1
-        textLabel.Text = role
-        textLabel.TextColor3 = roleColor
-        textLabel.TextScaled = true
-        textLabel.Font = Enum.Font.GothamBold
-        textLabel.TextStrokeTransparency = 0.5
-        textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-        textLabel.Parent = billboard
-        
-        table.insert(espObjects, billboard)
-        table.insert(espObjects, textLabel)
-    end
-end
-
--- ====== ОБНОВЛЕНИЕ ESP ======
-local function updateESP()
-    -- Очищаем старые объекты
-    for _, obj in pairs(espObjects) do
-        pcall(function()
-            if obj and obj.Parent then
-                obj:Destroy()
-            end
-        end)
-    end
-    espObjects = {}
-    
-    if not state.espEnabled then return end
-    
-    local players = game:GetService("Players")
-    local localPlayer = players.LocalPlayer
-    
-    for _, player in ipairs(players:GetPlayers()) do
-        if player ~= localPlayer and player.Character then
-            createESP(player)
-        end
-    end
-end
-
--- ====== ТОГГЛЫ ======
-functionsSection:Toggle("Enable ESP", false, function(enabled)
-    state.espEnabled = enabled
+-- === СПИДХАК ===
+local function toggleSpeedHack(enabled)
+    state.speedHack = enabled
+    if not humanoid then return end
     if enabled then
-        updateESP()
-        -- Запускаем цикл обновления
-        if not espLoop then
-            espLoop = game:GetService("RunService").RenderStepped:Connect(function()
-                if state.espEnabled then
-                    updateESP()
-                end
-            end)
-        end
+        humanoid.WalkSpeed = state.walkSpeed
     else
-        -- Очищаем ESP
-        for _, obj in pairs(espObjects) do
-            pcall(function()
-                if obj and obj.Parent then
-                    obj:Destroy()
-                end
-            end)
-        end
-        espObjects = {}
-        if espLoop then
-            espLoop:Disconnect()
-            espLoop = nil
-        end
+        humanoid.WalkSpeed = 16 -- Стандартная скорость в Roblox
     end
-end, 1)
+end
 
-functionsSection:Toggle("Wall Hack", false, function(enabled)
-    state.wallhack = enabled
-    if state.espEnabled then
-        updateESP()
+-- === АИМ (более плавный) ===
+RunService.RenderStepped:Connect(function()
+    if not state.aimBot then return end
+    local target = getClosestPlayer()
+    if target and target.Character and target.Character:FindFirstChild("Head") then
+        local head = target.Character.Head
+        local camera = workspace.CurrentCamera
+        local targetPos = head.Position
+        -- Добавляем смещение для стрельбы в голову
+        targetPos = targetPos + Vector3.new(0, 0.5, 0)
+
+        -- Плавное наведение (используем TweenService)
+        local currentCF = camera.CFrame
+        local lookAt = CFrame.lookAt(currentCF.Position, targetPos)
+        local tweenInfo = TweenInfo.new(state.aimSmoothness, Enum.EasingStyle.Linear)
+        local tween = TweenService:Create(camera, tweenInfo, {CFrame = lookAt})
+        tween:Play()
+    end
+end)
+
+-- === ЭКСТРЕМАЛЬНАЯ КНОПКА "Extreme HACK" ===
+local function triggerExtremeHack()
+    if state.isHackActive then return end -- Защита от множественных нажатий
+    state.isHackActive = true
+
+    -- 1. Создаём GUI для надписи
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = player.PlayerGui
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = "You Are IDIOT"
+    textLabel.TextColor3 = Color3.new(1, 0, 0) -- Красный
+    textLabel.TextScaled = true
+    textLabel.Font = Enum.Font.Bold
+    textLabel.TextStrokeTransparency = 0
+    textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+    textLabel.Parent = screenGui
+
+    -- Анимация появления (мерцание)
+    local function flashText()
+        for i = 1, 15 do -- 15 циклов мерцания
+            textLabel.Visible = not textLabel.Visible
+            task.wait(0.08)
+        end
+        textLabel.Visible = true
+    end
+
+    -- 2. Воспроизведение музыки (встроенный звук или ссылка)
+    local soundId = "rbxassetid://1838918886" -- Замените на свой ID или URL
+    local sound = Instance.new("Sound")
+    sound.SoundId = soundId
+    sound.Volume = 1
+    sound.Looped = false
+    sound.Parent = workspace -- или SoundService
+    sound:Play()
+
+    -- 3. Запуск мерцания
+    flashText()
+
+    -- 4. Таймер на 30 секунд
+    task.wait(30)
+
+    -- 5. Закрытие Roblox
+    game:Shutdown()
+end
+
+-- === СОЗДАНИЕ ВКЛАДОК И ЭЛЕМЕНТОВ ===
+local mainTab = window:CreateTab("Main", "lucide-home")
+local hackTab = window:CreateTab("Hacks", "lucide-zap")
+local funTab = window:CreateTab("Fun", "lucide-smile")
+
+-- Вкладка Main (информация)
+local infoSection = mainTab:Section("Info")
+infoSection:Paragraph("Welcome", "Используйте RightControl для открытия меню.")
+
+-- Вкладка Hacks
+local speedSection = hackTab:Section("Speed Hack")
+speedSection:Toggle("Enable Speed", false, function(enabled)
+    toggleSpeedHack(enabled)
+end, 1)
+speedSection:Slider("Walk Speed", 16, 250, 50, 1, function(value)
+    state.walkSpeed = value
+    if state.speedHack then
+        toggleSpeedHack(true) -- Обновляем скорость
     end
 end, 2)
 
-functionsSection:Toggle("Show Roles", true, function(enabled)
-    state.showRoles = enabled
-    if state.espEnabled then
-        updateESP()
-    end
+local aimSection = hackTab:Section("Aim Bot")
+aimSection:Toggle("Enable Aim", false, function(enabled)
+    state.aimBot = enabled
+end, 1)
+aimSection:Slider("Smoothness", 0.1, 1, 0.3, 0.05, function(value)
+    state.aimSmoothness = value
+end, 2)
+aimSection:Slider("FOV", 50, 400, 200, 10, function(value)
+    state.aimFov = value
 end, 3)
 
-functionsSection:Button("Refresh ESP", function()
-    if state.espEnabled then
-        updateESP()
-        print("[MM2] ESP Refreshed!")
-    end
-end, 4)
+-- Вкладка Fun
+local extremeSection = funTab:Section("Extreme Hack")
+extremeSection:Paragraph("Warning", "Нажмите на кнопку, чтобы запустить эффект 'You Are IDIOT'!")
+extremeSection:Button("Extreme HACK", function()
+    triggerExtremeHack()
+end, 1)
 
--- ====== ОТСЛЕЖИВАНИЕ НОВЫХ ИГРОКОВ ======
-local players = game:GetService("Players")
-
-players.PlayerAdded:Connect(function(player)
-    if state.espEnabled then
-        task.wait(0.2)
-        updateESP()
-    end
-end)
-
-players.PlayerRemoving:Connect(function()
-    if state.espEnabled then
-        task.wait(0.1)
-        updateESP()
-    end
-end)
-
--- ====== ИНФОРМАЦИОННАЯ СЕКЦИЯ ======
-local infoSection = mainTab:Section("Info")
-infoSection:Paragraph("Help", 
-    "Enable ESP - Включить все функции\n" ..
-    "Wall Hack - Показывает игроков сквозь стены\n" ..
-    "Show Roles - Отображает роли под игроками\n\n" ..
-    "🎯 Роли:\n" ..
-    "🔴 Murderer - Убийца\n" ..
-    "🔵 Sheriff - Шериф\n" ..
-    "🟢 Innocent - Обычный игрок", 1)
-
--- ====== ИНФОРМАЦИЯ ПРИ ЗАГРУЗКЕ ======
-print("====================================")
-print("MM2 Enhanced loaded successfully!")
-print("====================================")
-print("Press RightControl to toggle GUI")
-print("Enable ESP to start")
-print("====================================")
-
+-- Запуск скрипта
 return window
