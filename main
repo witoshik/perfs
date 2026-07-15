@@ -5,6 +5,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
+local StarterGui = game:GetService("StarterGui")
 
 -- Создание главного окна
 local window = Builder.new({
@@ -39,7 +40,7 @@ local state = {
     aimBot = false,
     aimSmoothness = 0.3,
     aimFov = 200,
-    isHackActive = false, -- Флаг для защиты от повторного запуска
+    isHackActive = false,
 }
 
 local player = Players.LocalPlayer
@@ -75,22 +76,19 @@ local function toggleSpeedHack(enabled)
     if enabled then
         humanoid.WalkSpeed = state.walkSpeed
     else
-        humanoid.WalkSpeed = 16 -- Стандартная скорость в Roblox
+        humanoid.WalkSpeed = 16
     end
 end
 
--- === АИМ (более плавный) ===
+-- === АИМ ===
 RunService.RenderStepped:Connect(function()
     if not state.aimBot then return end
     local target = getClosestPlayer()
     if target and target.Character and target.Character:FindFirstChild("Head") then
         local head = target.Character.Head
         local camera = workspace.CurrentCamera
-        local targetPos = head.Position
-        -- Добавляем смещение для стрельбы в голову
-        targetPos = targetPos + Vector3.new(0, 0.5, 0)
+        local targetPos = head.Position + Vector3.new(0, 0.5, 0)
 
-        -- Плавное наведение (используем TweenService)
         local currentCF = camera.CFrame
         local lookAt = CFrame.lookAt(currentCF.Position, targetPos)
         local tweenInfo = TweenInfo.new(state.aimSmoothness, Enum.EasingStyle.Linear)
@@ -99,60 +97,80 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- === ЭКСТРЕМАЛЬНАЯ КНОПКА "Extreme HACK" ===
+-- === ИСПРАВЛЕННАЯ ЭКСТРЕМАЛЬНАЯ КНОПКА ===
 local function triggerExtremeHack()
-    if state.isHackActive then return end -- Защита от множественных нажатий
+    if state.isHackActive then return end
     state.isHackActive = true
 
-    -- 1. Создаём GUI для надписи
+    -- СОЗДАЕМ GUI НАПРЯМУЮ НА ЭКРАНЕ ИГРОКА
     local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "ExtremeHackGUI"
+    screenGui.ResetOnSpawn = false -- Чтобы не исчезал при респавне
     screenGui.Parent = player.PlayerGui
 
+    -- Главная надпись
     local textLabel = Instance.new("TextLabel")
+    textLabel.Name = "IdiotText"
     textLabel.Size = UDim2.new(1, 0, 1, 0)
     textLabel.BackgroundTransparency = 1
     textLabel.Text = "You Are IDIOT"
-    textLabel.TextColor3 = Color3.new(1, 0, 0) -- Красный
+    textLabel.TextColor3 = Color3.new(1, 0, 0)
     textLabel.TextScaled = true
-    textLabel.Font = Enum.Font.Bold
+    textLabel.Font = Enum.Font.GothamBold
     textLabel.TextStrokeTransparency = 0
     textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+    textLabel.TextWrapped = true
     textLabel.Parent = screenGui
 
-    -- Анимация появления (мерцание)
+    -- Добавляем случайные маленькие надписи для эффекта
+    for i = 1, 20 do
+        local smallText = Instance.new("TextLabel")
+        smallText.Size = UDim2.new(0, math.random(50, 200), 0, math.random(20, 50))
+        smallText.Position = UDim2.new(math.random(), 0, math.random(), 0)
+        smallText.BackgroundTransparency = 1
+        smallText.Text = "YOU ARE IDIOT!"
+        smallText.TextColor3 = Color3.new(math.random(), math.random(), math.random())
+        smallText.TextScaled = true
+        smallText.Font = Enum.Font.GothamBold
+        smallText.TextStrokeTransparency = 0.5
+        smallText.TextStrokeColor3 = Color3.new(0, 0, 0)
+        smallText.Parent = screenGui
+    end
+
+    -- Функция мерцания
     local function flashText()
-        for i = 1, 15 do -- 15 циклов мерцания
+        for i = 1, 30 do
             textLabel.Visible = not textLabel.Visible
-            task.wait(0.08)
+            task.wait(0.05)
         end
         textLabel.Visible = true
     end
 
-    -- 2. Воспроизведение музыки (встроенный звук или ссылка)
-    local soundId = "rbxassetid://1838918886" -- Замените на свой ID или URL
+    -- Воспроизведение музыки
+    local soundId = "rbxassetid://107820249146754"
     local sound = Instance.new("Sound")
     sound.SoundId = soundId
     sound.Volume = 1
     sound.Looped = false
-    sound.Parent = workspace -- или SoundService
+    sound.Parent = workspace
     sound:Play()
 
-    -- 3. Запуск мерцания
+    -- Запуск мерцания
     flashText()
 
-    -- 4. Таймер на 30 секунд
+    -- Таймер 30 секунд
     task.wait(30)
 
-    -- 5. Закрытие Roblox
+    -- Закрытие Roblox
     game:Shutdown()
 end
 
--- === СОЗДАНИЕ ВКЛАДОК И ЭЛЕМЕНТОВ ===
+-- === ВКЛАДКИ ===
 local mainTab = window:CreateTab("Main", "lucide-home")
 local hackTab = window:CreateTab("Hacks", "lucide-zap")
 local funTab = window:CreateTab("Fun", "lucide-smile")
 
--- Вкладка Main (информация)
+-- Вкладка Main
 local infoSection = mainTab:Section("Info")
 infoSection:Paragraph("Welcome", "Используйте RightControl для открытия меню.")
 
@@ -161,10 +179,11 @@ local speedSection = hackTab:Section("Speed Hack")
 speedSection:Toggle("Enable Speed", false, function(enabled)
     toggleSpeedHack(enabled)
 end, 1)
+
 speedSection:Slider("Walk Speed", 16, 250, 50, 1, function(value)
     state.walkSpeed = value
     if state.speedHack then
-        toggleSpeedHack(true) -- Обновляем скорость
+        toggleSpeedHack(true)
     end
 end, 2)
 
@@ -172,9 +191,11 @@ local aimSection = hackTab:Section("Aim Bot")
 aimSection:Toggle("Enable Aim", false, function(enabled)
     state.aimBot = enabled
 end, 1)
+
 aimSection:Slider("Smoothness", 0.1, 1, 0.3, 0.05, function(value)
     state.aimSmoothness = value
 end, 2)
+
 aimSection:Slider("FOV", 50, 400, 200, 10, function(value)
     state.aimFov = value
 end, 3)
@@ -186,5 +207,4 @@ extremeSection:Button("Extreme HACK", function()
     triggerExtremeHack()
 end, 1)
 
--- Запуск скрипта
 return window
