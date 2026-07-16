@@ -3,14 +3,12 @@
 -- ====== ====== ====== ====== ====== ====== ====== ====== ======
 
 local function createLoadingScreen()
-    -- Создаём ScreenGui на весь экран
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "LoadingScreen"
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screenGui.Parent = game:GetService("CoreGui")
     screenGui.ResetOnSpawn = false
     
-    -- ЧЕРНЫЙ ФОН (полный экран - 100% размер)
     local background = Instance.new("Frame")
     background.Name = "Background"
     background.Size = UDim2.new(1, 0, 1, 0)
@@ -19,7 +17,6 @@ local function createLoadingScreen()
     background.BackgroundTransparency = 0
     background.Parent = screenGui
     
-    -- ====== ЗВЕЗДЫ (100 штук) ======
     local stars = {}
     for i = 1, 100 do
         local star = Instance.new("Frame")
@@ -52,7 +49,6 @@ local function createLoadingScreen()
         }
     end
     
-    -- ====== ТЕКСТ "Leek Cheats" ======
     local textContainer = Instance.new("Frame")
     textContainer.Name = "TextContainer"
     textContainer.Size = UDim2.new(0, 900, 0, 150)
@@ -110,7 +106,6 @@ local function createLoadingScreen()
         letters[i] = {letter = letter, shadow = shadow, glow = glow}
     end
     
-    -- ====== ПОДПИСЬ "by Witoshi" ======
     local subtitle = Instance.new("TextLabel")
     subtitle.Name = "Subtitle"
     subtitle.Size = UDim2.new(0, 500, 0, 50)
@@ -125,7 +120,6 @@ local function createLoadingScreen()
     subtitle.TextTransparency = 1
     subtitle.Parent = screenGui
     
-    -- ====== ПОЛОСА ЗАГРУЗКИ ======
     local loadingBarBg = Instance.new("Frame")
     loadingBarBg.Name = "LoadingBarBg"
     loadingBarBg.Size = UDim2.new(0.4, 0, 0, 4)
@@ -233,11 +227,9 @@ end
 
 -- ====== ЗАПУСК ЗАГРУЗОЧНОГО ЭКРАНА ======
 local screenGui, letters, subtitle, loadingBar, loadingGlow, percentLabel, stars = createLoadingScreen()
-
 animateStars(stars)
 
 local loadingProgress = 0
-local loadingSpeed = 0.02
 local isLoadingComplete = false
 
 local function updateLoading()
@@ -255,8 +247,7 @@ local function updateLoading()
         loadingGlow.BackgroundColor3 = Color3.fromRGB(brightness, brightness, brightness)
         
         percentLabel.Text = loadingProgress .. "%"
-        
-        task.wait(loadingSpeed)
+        task.wait(0.02)
         updateLoading()
     else
         isLoadingComplete = true
@@ -322,1009 +313,1070 @@ task.spawn(function()
     fadeOutLoadingScreen()
 end)
 
--- ====== ОСТАЛЬНОЙ КОД СКРИПТА ======
-local Builder = loadstring(game:HttpGet("https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/builder.lua"))()
-local UTILS_URL = "https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/utils/"
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
+-- ====== ОСНОВНОЙ СКРИПТ (ЗАГРУЖАЕТСЯ ПОСЛЕ ЗАГРУЗКИ) ======
+-- ====== ====== ====== ====== ====== ====== ====== ====== ======
 
-local function safeLoadUtil(name)
-    local ok, result = pcall(function()
-        return loadstring(game:HttpGet(UTILS_URL .. name .. ".lua"))()
+-- Ждем завершения загрузки
+repeat task.wait() until isLoadingComplete
+
+-- ОСНОВНОЙ КОД
+local function main()
+    -- Загрузка билдера и утилит с защитой от ошибок
+    local Builder, Maid, Runtime
+    
+    local success, result = pcall(function()
+        Builder = loadstring(game:HttpGet("https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/builder.lua"))()
+        return true
     end)
-    if ok then return result end
-    warn("Failed to load " .. name .. ":", result)
-    return nil
-end
-
-local Maid = safeLoadUtil("maid")
-local Runtime = safeLoadUtil("runtime")
-
--- ====== ЧЕРНО-БЕЛАЯ ТЕМА ======
-local blackWhiteTheme = {
-    Background = Color3.fromRGB(10, 10, 10),
-    Panel = Color3.fromRGB(25, 25, 25),
-    PanelLight = Color3.fromRGB(45, 45, 45),
-    PanelHover = Color3.fromRGB(80, 80, 80),
-    Text = Color3.fromRGB(255, 255, 255),
-    Muted = Color3.fromRGB(180, 180, 180),
-    Stroke = Color3.fromRGB(60, 60, 60),
-    SoftStroke = Color3.fromRGB(40, 40, 40),
-    Accent = Color3.fromRGB(200, 200, 200),
-    AccentDark = Color3.fromRGB(100, 100, 100),
-    Good = Color3.fromRGB(200, 255, 200),
-    Bad = Color3.fromRGB(255, 100, 100),
-}
-
-local window = Builder.new({
-    Title = "Leek Cheats",
-    ToggleKey = Enum.KeyCode.Home,
-    Animation = "Default",
-    TabAnimation = "Fade",
-    TabAnimationEnabled = true,
-    TabAnimationDuration = 0.3,
-    Responsive = true,
-    ResponsiveMargin = 20,
-    MinScale = 0.55,
-    MaxScale = 1,
-    BlurSize = 8,
-    BackdropTransparency = 0.3,
-    ConfirmTitle = "Unload script?",
-    ConfirmMessage = "Are you sure you want to unload this script?",
-    ConfirmYesText = "Yes",
-    ConfirmNoText = "No",
-    Width = 650,
-    Height = 480,
-    SidebarWidth = 160,
-    TabHeight = 42,
-    TabGap = 10,
-    TabScrollEnabled = true,
-    MaxVisibleTabs = 6,
-    Config = {
-        Enabled = true,
-        Folder = "LeekCheats",
-        File = "config.json",
-    },
-})
-
-window:RegisterTheme("BlackWhite", blackWhiteTheme)
-window:SetTheme("BlackWhite")
-
--- ====== СОСТОЯНИЕ СКРИПТА ======
-local state = {
-    enabled = false,
-    mouseUnlock = false,
-    binds = {
-        toggleMenu = Enum.KeyCode.Home,
-        unlockMouse = Enum.KeyCode.F1,
-        disableAll = Enum.KeyCode.F8,
-    },
-    transparency = 0.3,
-    blurSize = 8,
-    aimbot = {
-        enabled = false,
-        fov = 360,
-        smoothness = 0.3,
-        targetPart = "Head",
-        mode = "Closest",
-        visibleCheck = false,
-        teamCheck = true,
-    },
-    silentAim = {
-        enabled = false,
-        fov = 300,
-        showCircle = false,
-        hitChance = 100,
-        teamCheck = true,
-        shootThroughWalls = false, -- НОВАЯ ОПЦИЯ
-    },
-    teleport = {
-        enabled = false,
-        key = Enum.KeyCode.T,
-        distance = 50,
-        mode = "Front",
-    },
-    esp = {
-        enabled = false,
-        boxes = true,
-        names = true,
-        skeleton = true,
-        distance = 1200,
-        color = Color3.fromRGB(255, 255, 255),
-        healthBar = true,
-    },
-}
-
--- Глобальная Maid для очистки
-local mainMaid = Maid.new()
-
--- Получение сервисов
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local GuiService = game:GetService("GuiService")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local Drawing = Drawing or nil
-
--- Проверка наличия Drawing
-local hasDrawing = pcall(function() return Drawing.new("Square") end)
-
--- Переменные для управления
-local espObjects = {}
-local mouse = nil
-local fovCircle = nil
-local hookedWeapons = {}
-local silentTarget = nil
-
-pcall(function()
-    mouse = LocalPlayer:GetMouse()
-end)
-
--- ====== ФУНКЦИЯ ОБНОВЛЕНИЯ ПРОЗРАЧНОСТИ ======
-local function updateTransparency()
-    if window and window.Gui then
-        window.Gui.BackgroundTransparency = state.transparency
-        window.BackdropTransparency = state.transparency
-    end
-end
-
--- ====== РАЗБЛОКИРОВКА МЫШИ ======
-local function toggleMouseUnlock(unlock)
-    if unlock then
-        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-        UserInputService.MouseIconEnabled = true
-        GuiService.MouseIconEnabled = true
-        print("[Mouse] UNLOCKED")
-    else
-        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-        UserInputService.MouseIconEnabled = false
-        GuiService.MouseIconEnabled = false
-        print("[Mouse] LOCKED")
-    end
-end
-
--- ====== FOV КРУГ ======
-local function createFovCircle()
-    if not hasDrawing then return end
-    if fovCircle then
-        pcall(function() fovCircle:Remove() end)
-        fovCircle = nil
-    end
     
-    fovCircle = Drawing.new("Circle")
-    fovCircle.Visible = false
-    fovCircle.Radius = state.silentAim.fov
-    fovCircle.Color = Color3.fromRGB(200, 200, 255)
-    fovCircle.Thickness = 1.5
-    fovCircle.Filled = false
-    fovCircle.NumSides = 64
-    fovCircle.Transparency = 0.3
-    return fovCircle
-end
-
-local function updateFovCircle()
-    if not fovCircle then
-        fovCircle = createFovCircle()
-    end
-    if not fovCircle then return end
-    
-    if state.silentAim.showCircle and state.silentAim.enabled then
-        local viewport = Camera.ViewportSize
-        fovCircle.Visible = true
-        fovCircle.Position = Vector2.new(viewport.X/2, viewport.Y/2)
-        fovCircle.Radius = state.silentAim.fov
-    else
-        fovCircle.Visible = false
-    end
-end
-
--- ====== ПРОВЕРКА: ЖИВ ЛИ ИГРОК ======
-local function isPlayerAlive(player)
-    if not player then return false end
-    local character = player.Character
-    if not character then return false end
-    
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return false end
-    
-    if humanoid.Health <= 0 then return false end
-    
-    local state = humanoid:GetState()
-    if state == Enum.HumanoidStateType.Dead then return false end
-    
-    return true
-end
-
--- ====== ПРОВЕРКА КОМАНДЫ ======
-local function isTeamMate(player)
-    if not state.silentAim.teamCheck then return false end
-    local localTeam = LocalPlayer.Team
-    if not localTeam then return false end
-    return localTeam == player.Team
-end
-
--- ====== ПОЛУЧЕНИЕ ПОЗИЦИИ ГОЛОВЫ ======
-local function getTargetPart(player)
-    local character = player.Character
-    if not character then return nil end
-    local part = character:FindFirstChild("Head")
-    if not part then
-        part = character:FindFirstChild("HumanoidRootPart")
-    end
-    return part
-end
-
--- ====== ПОЛУЧЕНИЕ ЖИВЫХ ИГРОКОВ ======
-local function getPlayers()
-    local players = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player == LocalPlayer then continue end
-        if isTeamMate(player) then continue end
-        if not isPlayerAlive(player) then continue end
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            table.insert(players, player)
-        end
-    end
-    return players
-end
-
--- ====== SILENT AIM - СТРЕЛЬБА ЧЕРЕЗ СТЕНЫ ======
-local function getSilentAimTarget()
-    if not LocalPlayer.Character then return nil end
-    
-    local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return nil end
-    
-    local closest = nil
-    local closestDist = math.huge
-    local fov = state.silentAim.fov
-    local camera = Camera
-    local center = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
-    
-    for _, player in ipairs(getPlayers()) do
-        if isTeamMate(player) then continue end
-        if not isPlayerAlive(player) then continue end
-        
-        local targetPart = getTargetPart(player)
-        if targetPart then
-            local screenPos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
-            local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-            
-            if dist < fov and dist < closestDist then
-                -- ПРОВЕРКА НА ВИДИМОСТЬ (НЕ СКВОЗЬ СТЕНЫ)
-                if not state.silentAim.shootThroughWalls then
-                    local raycastParams = RaycastParams.new()
-                    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-                    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
-                    
-                    local rayOrigin = camera.CFrame.Position
-                    local rayDirection = (targetPart.Position - rayOrigin).Unit * 1000
-                    local rayResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-                    
-                    -- Если луч не уперся в игрока или уперся в другого игрока - пропускаем
-                    if rayResult and rayResult.Instance then
-                        local hitPlayer = Players:GetPlayerFromCharacter(rayResult.Instance:FindFirstAncestorOfClass("Model"))
-                        if hitPlayer ~= player then
-                            -- Не видим цель
-                            goto continue
-                        end
-                    end
-                end
-                
-                closest = player
-                closestDist = dist
-            end
-        end
-        ::continue::
-    end
-    return closest
-end
-
--- ====== ПЕРЕХВАТ ВЫСТРЕЛОВ ======
-local function hookWeapon(tool)
-    if not tool then return end
-    if hookedWeapons[tool] then return end
-    
-    for _, child in ipairs(tool:GetChildren()) do
-        if child:IsA("RemoteEvent") then
-            local oldFire = child.FireServer
-            
-            child.FireServer = function(...)
-                if state.enabled and state.silentAim.enabled then
-                    local target = getSilentAimTarget()
-                    if target and not isTeamMate(target) and isPlayerAlive(target) then
-                        local targetPart = getTargetPart(target)
-                        if targetPart then
-                            local args = {...}
-                            local targetPos = targetPart.Position
-                            
-                            for i, arg in ipairs(args) do
-                                if type(arg) == "Vector3" then
-                                    args[i] = targetPos
-                                elseif type(arg) == "CFrame" then
-                                    args[i] = CFrame.new(targetPos)
-                                elseif type(arg) == "table" then
-                                    if arg.Position then arg.Position = targetPos end
-                                    if arg.p then arg.p = targetPos end
-                                    if arg.target then arg.target = targetPos end
-                                    if arg.origin then arg.origin = targetPos end
-                                    if arg[1] and type(arg[1]) == "Vector3" then
-                                        arg[1] = targetPos
-                                    end
-                                    if arg[2] and type(arg[2]) == "Vector3" then
-                                        arg[2] = targetPos
-                                    end
-                                end
-                            end
-                            
-                            return oldFire(unpack(args))
-                        end
-                    end
-                end
-                return oldFire(...)
-            end
-            
-            hookedWeapons[tool] = true
-        end
-        
-        if child:IsA("RemoteFunction") then
-            local oldInvoke = child.InvokeServer
-            
-            child.InvokeServer = function(...)
-                if state.enabled and state.silentAim.enabled then
-                    local target = getSilentAimTarget()
-                    if target and not isTeamMate(target) and isPlayerAlive(target) then
-                        local targetPart = getTargetPart(target)
-                        if targetPart then
-                            local args = {...}
-                            local targetPos = targetPart.Position
-                            
-                            for i, arg in ipairs(args) do
-                                if type(arg) == "Vector3" then
-                                    args[i] = targetPos
-                                elseif type(arg) == "CFrame" then
-                                    args[i] = CFrame.new(targetPos)
-                                elseif type(arg) == "table" then
-                                    if arg.Position then arg.Position = targetPos end
-                                    if arg.p then arg.p = targetPos end
-                                    if arg[1] and type(arg[1]) == "Vector3" then
-                                        arg[1] = targetPos
-                                    end
-                                end
-                            end
-                            
-                            return oldInvoke(unpack(args))
-                        end
-                    end
-                end
-                return oldInvoke(...)
-            end
-            
-            hookedWeapons[tool] = true
-        end
-    end
-end
-
--- ====== ПРОВЕРКА ОРУЖИЯ ======
-local function checkWeapons()
-    local character = LocalPlayer.Character
-    if not character then return end
-    
-    for _, tool in ipairs(character:GetChildren()) do
-        if tool:IsA("Tool") then
-            hookWeapon(tool)
-        end
-    end
-end
-
--- ====== ESP ======
-local function createESPObject(player)
-    if not hasDrawing then return end
-    
-    local esp = {
-        Box = Drawing.new("Square"),
-        Name = Drawing.new("Text"),
-        Health = Drawing.new("Text"),
-        Skeleton = {},
-        player = player,
-        isDead = false,
-    }
-    
-    esp.Box.Visible = false
-    esp.Box.Thickness = 2
-    esp.Box.Color = state.esp.color
-    esp.Box.Filled = false
-    
-    esp.Name.Visible = false
-    esp.Name.Color = Color3.fromRGB(255, 255, 255)
-    esp.Name.Size = 16
-    esp.Name.Center = true
-    esp.Name.Outline = true
-    esp.Name.OutlineColor = Color3.fromRGB(0, 0, 0)
-    esp.Name.Font = 3
-    
-    esp.Health.Visible = false
-    esp.Health.Color = Color3.fromRGB(200, 255, 200)
-    esp.Health.Size = 13
-    esp.Health.Outline = true
-    esp.Health.OutlineColor = Color3.fromRGB(0, 0, 0)
-    esp.Health.Font = 3
-    
-    espObjects[player] = esp
-    return esp
-end
-
-local function getBonePositions(character)
-    local bones = {}
-    local skeletonJoints = {
-        {"Head", "Torso"},
-        {"Head", "Neck"},
-        {"Neck", "UpperTorso"},
-        {"UpperTorso", "LowerTorso"},
-        {"LowerTorso", "HumanoidRootPart"},
-        {"LeftShoulder", "LeftUpperArm"},
-        {"LeftUpperArm", "LeftLowerArm"},
-        {"LeftLowerArm", "LeftHand"},
-        {"RightShoulder", "RightUpperArm"},
-        {"RightUpperArm", "RightLowerArm"},
-        {"RightLowerArm", "RightHand"},
-        {"LeftHip", "LeftUpperLeg"},
-        {"LeftUpperLeg", "LeftLowerLeg"},
-        {"LeftLowerLeg", "LeftFoot"},
-        {"RightHip", "RightUpperLeg"},
-        {"RightUpperLeg", "RightLowerLeg"},
-        {"RightLowerLeg", "RightFoot"},
-    }
-    
-    for _, joint in ipairs(skeletonJoints) do
-        local part1 = character:FindFirstChild(joint[1])
-        local part2 = character:FindFirstChild(joint[2])
-        if part1 and part2 then
-            table.insert(bones, {part1.Position, part2.Position})
-        end
-    end
-    return bones
-end
-
--- ====== ИСПРАВЛЕННАЯ ФУНКЦИЯ ESP ======
-local function updateESP()
-    if not state.enabled or not state.esp.enabled or not hasDrawing then
-        for _, esp in pairs(espObjects) do
-            esp.Box.Visible = false
-            esp.Name.Visible = false
-            esp.Health.Visible = false
-            for _, bone in pairs(esp.Skeleton) do
-                if bone then bone.Visible = false end
-            end
-        end
+    if not success or not Builder then
+        warn("Failed to load Builder, using fallback...")
         return
     end
     
-    local camera = Camera
+    local UTILS_URL = "https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/utils/"
     
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player == LocalPlayer then continue end
+    local function safeLoadUtil(name)
+        local ok, result = pcall(function()
+            return loadstring(game:HttpGet(UTILS_URL .. name .. ".lua"))()
+        end)
+        if ok then return result end
+        warn("Failed to load " .. name .. ":", result)
+        return nil
+    end
+    
+    Maid = safeLoadUtil("maid")
+    Runtime = safeLoadUtil("runtime")
+    
+    -- Если утилиты не загрузились - создаем свои
+    if not Maid then
+        Maid = {
+            new = function()
+                return {
+                    _tasks = {},
+                    Give = function(self, task)
+                        table.insert(self._tasks, task)
+                        return task
+                    end,
+                    Cleanup = function(self)
+                        for _, task in ipairs(self._tasks) do
+                            if task then
+                                if task.Disconnect then task:Disconnect()
+                                elseif task.Destroy then task:Destroy()
+                                elseif type(task) == "function" then task() end
+                            end
+                        end
+                        self._tasks = {}
+                    end
+                }
+            end
+        }
+    end
+
+    -- ====== ЧЕРНО-БЕЛАЯ ТЕМА ======
+    local blackWhiteTheme = {
+        Background = Color3.fromRGB(10, 10, 10),
+        Panel = Color3.fromRGB(25, 25, 25),
+        PanelLight = Color3.fromRGB(45, 45, 45),
+        PanelHover = Color3.fromRGB(80, 80, 80),
+        Text = Color3.fromRGB(255, 255, 255),
+        Muted = Color3.fromRGB(180, 180, 180),
+        Stroke = Color3.fromRGB(60, 60, 60),
+        SoftStroke = Color3.fromRGB(40, 40, 40),
+        Accent = Color3.fromRGB(200, 200, 200),
+        AccentDark = Color3.fromRGB(100, 100, 100),
+        Good = Color3.fromRGB(200, 255, 200),
+        Bad = Color3.fromRGB(255, 100, 100),
+    }
+
+    local window = Builder.new({
+        Title = "Leek Cheats",
+        ToggleKey = Enum.KeyCode.Home,
+        Animation = "Default",
+        TabAnimation = "Fade",
+        TabAnimationEnabled = true,
+        TabAnimationDuration = 0.3,
+        Responsive = true,
+        ResponsiveMargin = 20,
+        MinScale = 0.55,
+        MaxScale = 1,
+        BlurSize = 8,
+        BackdropTransparency = 0.3,
+        ConfirmTitle = "Unload script?",
+        ConfirmMessage = "Are you sure you want to unload this script?",
+        ConfirmYesText = "Yes",
+        ConfirmNoText = "No",
+        Width = 650,
+        Height = 480,
+        SidebarWidth = 160,
+        TabHeight = 42,
+        TabGap = 10,
+        TabScrollEnabled = true,
+        MaxVisibleTabs = 6,
+        Config = {
+            Enabled = true,
+            Folder = "LeekCheats",
+            File = "config.json",
+        },
+    })
+
+    window:RegisterTheme("BlackWhite", blackWhiteTheme)
+    window:SetTheme("BlackWhite")
+
+    -- ====== СОСТОЯНИЕ СКРИПТА ======
+    local state = {
+        enabled = false,
+        mouseUnlock = false,
+        binds = {
+            toggleMenu = Enum.KeyCode.Home,
+            unlockMouse = Enum.KeyCode.F1,
+            disableAll = Enum.KeyCode.F8,
+        },
+        transparency = 0.3,
+        blurSize = 8,
+        aimbot = {
+            enabled = false,
+            fov = 360,
+            smoothness = 0.3,
+            targetPart = "Head",
+            mode = "Closest",
+            visibleCheck = false,
+            teamCheck = true,
+        },
+        silentAim = {
+            enabled = false,
+            fov = 300,
+            showCircle = false,
+            hitChance = 100,
+            teamCheck = true,
+            shootThroughWalls = false,
+        },
+        teleport = {
+            enabled = false,
+            key = Enum.KeyCode.T,
+            distance = 50,
+            mode = "Front",
+        },
+        esp = {
+            enabled = false,
+            boxes = true,
+            names = true,
+            skeleton = true,
+            distance = 1200,
+            color = Color3.fromRGB(255, 255, 255),
+            healthBar = true,
+        },
+    }
+
+    -- Глобальная Maid для очистки
+    local mainMaid = Maid.new()
+
+    -- Получение сервисов
+    local Players = game:GetService("Players")
+    local RunService = game:GetService("RunService")
+    local UserInputService = game:GetService("UserInputService")
+    local GuiService = game:GetService("GuiService")
+    local LocalPlayer = Players.LocalPlayer
+    local Camera = workspace.CurrentCamera
+    local Drawing = Drawing or nil
+
+    -- Проверка наличия Drawing
+    local hasDrawing = pcall(function() return Drawing.new("Square") end)
+
+    -- Переменные для управления
+    local espObjects = {}
+    local mouse = nil
+    local fovCircle = nil
+    local hookedWeapons = {}
+    local silentTarget = nil
+
+    pcall(function()
+        mouse = LocalPlayer:GetMouse()
+    end)
+
+    -- ====== ФУНКЦИЯ ОБНОВЛЕНИЯ ПРОЗРАЧНОСТИ ======
+    local function updateTransparency()
+        if window and window.Gui then
+            window.Gui.BackgroundTransparency = state.transparency
+            window.BackdropTransparency = state.transparency
+        end
+    end
+
+    -- ====== РАЗБЛОКИРОВКА МЫШИ ======
+    local function toggleMouseUnlock(unlock)
+        if unlock then
+            UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+            UserInputService.MouseIconEnabled = true
+            GuiService.MouseIconEnabled = true
+            print("[Mouse] UNLOCKED")
+        else
+            UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+            UserInputService.MouseIconEnabled = false
+            GuiService.MouseIconEnabled = false
+            print("[Mouse] LOCKED")
+        end
+    end
+
+    -- ====== FOV КРУГ ======
+    local function createFovCircle()
+        if not hasDrawing then return end
+        if fovCircle then
+            pcall(function() fovCircle:Remove() end)
+            fovCircle = nil
+        end
         
-        local isDead = not isPlayerAlive(player)
+        fovCircle = Drawing.new("Circle")
+        fovCircle.Visible = false
+        fovCircle.Radius = state.silentAim.fov
+        fovCircle.Color = Color3.fromRGB(200, 200, 255)
+        fovCircle.Thickness = 1.5
+        fovCircle.Filled = false
+        fovCircle.NumSides = 64
+        fovCircle.Transparency = 0.3
+        return fovCircle
+    end
+
+    local function updateFovCircle()
+        if not fovCircle then
+            fovCircle = createFovCircle()
+        end
+        if not fovCircle then return end
         
-        if isDead or isTeamMate(player) then
-            if espObjects[player] then
-                local esp = espObjects[player]
+        if state.silentAim.showCircle and state.silentAim.enabled then
+            local viewport = Camera.ViewportSize
+            fovCircle.Visible = true
+            fovCircle.Position = Vector2.new(viewport.X/2, viewport.Y/2)
+            fovCircle.Radius = state.silentAim.fov
+        else
+            fovCircle.Visible = false
+        end
+    end
+
+    -- ====== ПРОВЕРКА: ЖИВ ЛИ ИГРОК ======
+    local function isPlayerAlive(player)
+        if not player then return false end
+        local character = player.Character
+        if not character then return false end
+        
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if not humanoid then return false end
+        
+        if humanoid.Health <= 0 then return false end
+        
+        local state = humanoid:GetState()
+        if state == Enum.HumanoidStateType.Dead then return false end
+        
+        return true
+    end
+
+    -- ====== ПРОВЕРКА КОМАНДЫ ======
+    local function isTeamMate(player)
+        if not state.silentAim.teamCheck then return false end
+        local localTeam = LocalPlayer.Team
+        if not localTeam then return false end
+        return localTeam == player.Team
+    end
+
+    -- ====== ПОЛУЧЕНИЕ ПОЗИЦИИ ГОЛОВЫ ======
+    local function getTargetPart(player)
+        local character = player.Character
+        if not character then return nil end
+        local part = character:FindFirstChild("Head")
+        if not part then
+            part = character:FindFirstChild("HumanoidRootPart")
+        end
+        return part
+    end
+
+    -- ====== ПОЛУЧЕНИЕ ЖИВЫХ ИГРОКОВ ======
+    local function getPlayers()
+        local players = {}
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player == LocalPlayer then continue end
+            if isTeamMate(player) then continue end
+            if not isPlayerAlive(player) then continue end
+            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                table.insert(players, player)
+            end
+        end
+        return players
+    end
+
+    -- ====== SILENT AIM ======
+    local function getSilentAimTarget()
+        if not LocalPlayer.Character then return nil end
+        
+        local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return nil end
+        
+        local closest = nil
+        local closestDist = math.huge
+        local fov = state.silentAim.fov
+        local camera = Camera
+        local center = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
+        
+        for _, player in ipairs(getPlayers()) do
+            if isTeamMate(player) then continue end
+            if not isPlayerAlive(player) then continue end
+            
+            local targetPart = getTargetPart(player)
+            if targetPart then
+                local screenPos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
+                local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                
+                if dist < fov and dist < closestDist then
+                    if not state.silentAim.shootThroughWalls then
+                        local raycastParams = RaycastParams.new()
+                        raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                        raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+                        
+                        local rayOrigin = camera.CFrame.Position
+                        local rayDirection = (targetPart.Position - rayOrigin).Unit * 1000
+                        local rayResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+                        
+                        if rayResult and rayResult.Instance then
+                            local hitPlayer = Players:GetPlayerFromCharacter(rayResult.Instance:FindFirstAncestorOfClass("Model"))
+                            if hitPlayer ~= player then
+                                goto continue
+                            end
+                        end
+                    end
+                    
+                    closest = player
+                    closestDist = dist
+                end
+            end
+            ::continue::
+        end
+        return closest
+    end
+
+    -- ====== ПЕРЕХВАТ ВЫСТРЕЛОВ ======
+    local function hookWeapon(tool)
+        if not tool then return end
+        if hookedWeapons[tool] then return end
+        
+        for _, child in ipairs(tool:GetChildren()) do
+            if child:IsA("RemoteEvent") then
+                local oldFire = child.FireServer
+                
+                child.FireServer = function(...)
+                    if state.enabled and state.silentAim.enabled then
+                        local target = getSilentAimTarget()
+                        if target and not isTeamMate(target) and isPlayerAlive(target) then
+                            local targetPart = getTargetPart(target)
+                            if targetPart then
+                                local args = {...}
+                                local targetPos = targetPart.Position
+                                
+                                for i, arg in ipairs(args) do
+                                    if type(arg) == "Vector3" then
+                                        args[i] = targetPos
+                                    elseif type(arg) == "CFrame" then
+                                        args[i] = CFrame.new(targetPos)
+                                    elseif type(arg) == "table" then
+                                        if arg.Position then arg.Position = targetPos end
+                                        if arg.p then arg.p = targetPos end
+                                        if arg.target then arg.target = targetPos end
+                                        if arg.origin then arg.origin = targetPos end
+                                        if arg[1] and type(arg[1]) == "Vector3" then
+                                            arg[1] = targetPos
+                                        end
+                                        if arg[2] and type(arg[2]) == "Vector3" then
+                                            arg[2] = targetPos
+                                        end
+                                    end
+                                end
+                                
+                                return oldFire(unpack(args))
+                            end
+                        end
+                    end
+                    return oldFire(...)
+                end
+                
+                hookedWeapons[tool] = true
+            end
+            
+            if child:IsA("RemoteFunction") then
+                local oldInvoke = child.InvokeServer
+                
+                child.InvokeServer = function(...)
+                    if state.enabled and state.silentAim.enabled then
+                        local target = getSilentAimTarget()
+                        if target and not isTeamMate(target) and isPlayerAlive(target) then
+                            local targetPart = getTargetPart(target)
+                            if targetPart then
+                                local args = {...}
+                                local targetPos = targetPart.Position
+                                
+                                for i, arg in ipairs(args) do
+                                    if type(arg) == "Vector3" then
+                                        args[i] = targetPos
+                                    elseif type(arg) == "CFrame" then
+                                        args[i] = CFrame.new(targetPos)
+                                    elseif type(arg) == "table" then
+                                        if arg.Position then arg.Position = targetPos end
+                                        if arg.p then arg.p = targetPos end
+                                        if arg[1] and type(arg[1]) == "Vector3" then
+                                            arg[1] = targetPos
+                                        end
+                                    end
+                                end
+                                
+                                return oldInvoke(unpack(args))
+                            end
+                        end
+                    end
+                    return oldInvoke(...)
+                end
+                
+                hookedWeapons[tool] = true
+            end
+        end
+    end
+
+    -- ====== ПРОВЕРКА ОРУЖИЯ ======
+    local function checkWeapons()
+        local character = LocalPlayer.Character
+        if not character then return end
+        
+        for _, tool in ipairs(character:GetChildren()) do
+            if tool:IsA("Tool") then
+                hookWeapon(tool)
+            end
+        end
+    end
+
+    -- ====== ESP ======
+    local function createESPObject(player)
+        if not hasDrawing then return end
+        
+        local esp = {
+            Box = Drawing.new("Square"),
+            Name = Drawing.new("Text"),
+            Health = Drawing.new("Text"),
+            Skeleton = {},
+            player = player,
+            isDead = false,
+        }
+        
+        esp.Box.Visible = false
+        esp.Box.Thickness = 2
+        esp.Box.Color = state.esp.color
+        esp.Box.Filled = false
+        
+        esp.Name.Visible = false
+        esp.Name.Color = Color3.fromRGB(255, 255, 255)
+        esp.Name.Size = 16
+        esp.Name.Center = true
+        esp.Name.Outline = true
+        esp.Name.OutlineColor = Color3.fromRGB(0, 0, 0)
+        esp.Name.Font = 3
+        
+        esp.Health.Visible = false
+        esp.Health.Color = Color3.fromRGB(200, 255, 200)
+        esp.Health.Size = 13
+        esp.Health.Outline = true
+        esp.Health.OutlineColor = Color3.fromRGB(0, 0, 0)
+        esp.Health.Font = 3
+        
+        espObjects[player] = esp
+        return esp
+    end
+
+    local function getBonePositions(character)
+        local bones = {}
+        local skeletonJoints = {
+            {"Head", "Torso"},
+            {"Head", "Neck"},
+            {"Neck", "UpperTorso"},
+            {"UpperTorso", "LowerTorso"},
+            {"LowerTorso", "HumanoidRootPart"},
+            {"LeftShoulder", "LeftUpperArm"},
+            {"LeftUpperArm", "LeftLowerArm"},
+            {"LeftLowerArm", "LeftHand"},
+            {"RightShoulder", "RightUpperArm"},
+            {"RightUpperArm", "RightLowerArm"},
+            {"RightLowerArm", "RightHand"},
+            {"LeftHip", "LeftUpperLeg"},
+            {"LeftUpperLeg", "LeftLowerLeg"},
+            {"LeftLowerLeg", "LeftFoot"},
+            {"RightHip", "RightUpperLeg"},
+            {"RightUpperLeg", "RightLowerLeg"},
+            {"RightLowerLeg", "RightFoot"},
+        }
+        
+        for _, joint in ipairs(skeletonJoints) do
+            local part1 = character:FindFirstChild(joint[1])
+            local part2 = character:FindFirstChild(joint[2])
+            if part1 and part2 then
+                table.insert(bones, {part1.Position, part2.Position})
+            end
+        end
+        return bones
+    end
+
+    local function updateESP()
+        if not state.enabled or not state.esp.enabled or not hasDrawing then
+            for _, esp in pairs(espObjects) do
                 esp.Box.Visible = false
                 esp.Name.Visible = false
                 esp.Health.Visible = false
                 for _, bone in pairs(esp.Skeleton) do
                     if bone then bone.Visible = false end
                 end
-                esp.isDead = true
             end
-            continue
+            return
         end
         
-        local character = player.Character
-        if not character then continue end
+        local camera = Camera
         
-        local rootPart = character:FindFirstChild("HumanoidRootPart")
-        if not rootPart then continue end
-        
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if not humanoid then continue end
-        
-        local distance = (rootPart.Position - camera.CFrame.Position).Magnitude
-        if distance > state.esp.distance then continue end
-        
-        local esp = espObjects[player]
-        if not esp then
-            esp = createESPObject(player)
-        end
-        if not esp then continue end
-        
-        esp.isDead = false
-        
-        local screenPos, onScreen = camera:WorldToViewportPoint(rootPart.Position)
-        if not onScreen then
-            esp.Box.Visible = false
-            esp.Name.Visible = false
-            esp.Health.Visible = false
-            -- Скрываем скелет если игрок не на экране
-            for _, bone in pairs(esp.Skeleton) do
-                if bone then bone.Visible = false end
-            end
-            continue
-        end
-        
-        local size = 4 / distance * 100
-        local height = size * 2.5
-        local width = size * 1.2
-        
-        local topLeft = Vector2.new(screenPos.X - width/2, screenPos.Y - height/2)
-        local bottomRight = Vector2.new(screenPos.X + width/2, screenPos.Y + height/2)
-        
-        if state.esp.boxes then
-            esp.Box.Visible = true
-            esp.Box.Position = topLeft
-            esp.Box.Size = Vector2.new(width, height)
-            esp.Box.Color = state.esp.color
-            esp.Box.Thickness = 2
-        else
-            esp.Box.Visible = false
-        end
-        
-        if state.esp.names then
-            esp.Name.Visible = true
-            esp.Name.Position = Vector2.new(screenPos.X, topLeft.Y - 22)
-            esp.Name.Text = player.Name
-        else
-            esp.Name.Visible = false
-        end
-        
-        if state.esp.healthBar then
-            esp.Health.Visible = true
-            local healthPercent = humanoid.Health / humanoid.MaxHealth
-            local healthColor = Color3.fromRGB(
-                255 - (healthPercent * 255),
-                healthPercent * 255,
-                100
-            )
-            esp.Health.Color = healthColor
-            esp.Health.Position = Vector2.new(screenPos.X, bottomRight.Y + 22)
-            esp.Health.Text = string.format("%.0f%%", healthPercent * 100)
-        else
-            esp.Health.Visible = false
-        end
-        
-        -- ОТРИСОВКА СКЕЛЕТА С ПРОВЕРКОЙ ВИДИМОСТИ
-        if state.esp.skeleton and not esp.isDead then
-            local bones = getBonePositions(character)
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player == LocalPlayer then continue end
             
-            -- Скрываем лишние кости если их стало меньше
-            for i = #esp.Skeleton, #bones + 1, -1 do
-                if esp.Skeleton[i] then
-                    esp.Skeleton[i].Visible = false
-                end
-            end
+            local isDead = not isPlayerAlive(player)
             
-            for i, bone in ipairs(bones) do
-                local pos1, onScreen1 = camera:WorldToViewportPoint(bone[1])
-                local pos2, onScreen2 = camera:WorldToViewportPoint(bone[2])
-                
-                if onScreen1 and onScreen2 then
-                    if not esp.Skeleton[i] then
-                        esp.Skeleton[i] = Drawing.new("Line")
-                        esp.Skeleton[i].Thickness = 2
-                        esp.Skeleton[i].Color = state.esp.color
+            if isDead or isTeamMate(player) then
+                if espObjects[player] then
+                    local esp = espObjects[player]
+                    esp.Box.Visible = false
+                    esp.Name.Visible = false
+                    esp.Health.Visible = false
+                    for _, bone in pairs(esp.Skeleton) do
+                        if bone then bone.Visible = false end
                     end
-                    esp.Skeleton[i].Visible = true
-                    esp.Skeleton[i].From = Vector2.new(pos1.X, pos1.Y)
-                    esp.Skeleton[i].To = Vector2.new(pos2.X, pos2.Y)
-                    esp.Skeleton[i].Color = state.esp.color
-                elseif esp.Skeleton[i] then
-                    esp.Skeleton[i].Visible = false
+                    esp.isDead = true
                 end
+                continue
+            end
+            
+            local character = player.Character
+            if not character then continue end
+            
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            if not rootPart then continue end
+            
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if not humanoid then continue end
+            
+            local distance = (rootPart.Position - camera.CFrame.Position).Magnitude
+            if distance > state.esp.distance then continue end
+            
+            local esp = espObjects[player]
+            if not esp then
+                esp = createESPObject(player)
+            end
+            if not esp then continue end
+            
+            esp.isDead = false
+            
+            local screenPos, onScreen = camera:WorldToViewportPoint(rootPart.Position)
+            if not onScreen then
+                esp.Box.Visible = false
+                esp.Name.Visible = false
+                esp.Health.Visible = false
+                for _, bone in pairs(esp.Skeleton) do
+                    if bone then bone.Visible = false end
+                end
+                continue
+            end
+            
+            local size = 4 / distance * 100
+            local height = size * 2.5
+            local width = size * 1.2
+            
+            local topLeft = Vector2.new(screenPos.X - width/2, screenPos.Y - height/2)
+            local bottomRight = Vector2.new(screenPos.X + width/2, screenPos.Y + height/2)
+            
+            if state.esp.boxes then
+                esp.Box.Visible = true
+                esp.Box.Position = topLeft
+                esp.Box.Size = Vector2.new(width, height)
+                esp.Box.Color = state.esp.color
+                esp.Box.Thickness = 2
+            else
+                esp.Box.Visible = false
+            end
+            
+            if state.esp.names then
+                esp.Name.Visible = true
+                esp.Name.Position = Vector2.new(screenPos.X, topLeft.Y - 22)
+                esp.Name.Text = player.Name
+            else
+                esp.Name.Visible = false
+            end
+            
+            if state.esp.healthBar then
+                esp.Health.Visible = true
+                local healthPercent = humanoid.Health / humanoid.MaxHealth
+                local healthColor = Color3.fromRGB(
+                    255 - (healthPercent * 255),
+                    healthPercent * 255,
+                    100
+                )
+                esp.Health.Color = healthColor
+                esp.Health.Position = Vector2.new(screenPos.X, bottomRight.Y + 22)
+                esp.Health.Text = string.format("%.0f%%", healthPercent * 100)
+            else
+                esp.Health.Visible = false
+            end
+            
+            if state.esp.skeleton and not esp.isDead then
+                local bones = getBonePositions(character)
+                
+                for i = #esp.Skeleton, #bones + 1, -1 do
+                    if esp.Skeleton[i] then
+                        esp.Skeleton[i].Visible = false
+                    end
+                end
+                
+                for i, bone in ipairs(bones) do
+                    local pos1, onScreen1 = camera:WorldToViewportPoint(bone[1])
+                    local pos2, onScreen2 = camera:WorldToViewportPoint(bone[2])
+                    
+                    if onScreen1 and onScreen2 then
+                        if not esp.Skeleton[i] then
+                            esp.Skeleton[i] = Drawing.new("Line")
+                            esp.Skeleton[i].Thickness = 2
+                            esp.Skeleton[i].Color = state.esp.color
+                        end
+                        esp.Skeleton[i].Visible = true
+                        esp.Skeleton[i].From = Vector2.new(pos1.X, pos1.Y)
+                        esp.Skeleton[i].To = Vector2.new(pos2.X, pos2.Y)
+                        esp.Skeleton[i].Color = state.esp.color
+                    elseif esp.Skeleton[i] then
+                        esp.Skeleton[i].Visible = false
+                    end
+                end
+            else
+                for _, bone in pairs(esp.Skeleton) do
+                    if bone then 
+                        bone.Visible = false
+                    end
+                end
+            end
+        end
+    end
+
+    -- ====== АИМБОТ ======
+    local function findBestTarget(fov, checkVisible)
+        if not LocalPlayer.Character then return nil end
+        
+        local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return nil end
+        
+        local closest = nil
+        local closestDist = math.huge
+        local camera = Camera
+        local center = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
+        
+        for _, player in ipairs(getPlayers()) do
+            if isTeamMate(player) then continue end
+            if not isPlayerAlive(player) then continue end
+            
+            local targetPart = getTargetPart(player)
+            if targetPart then
+                local screenPos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
+                if checkVisible and not onScreen then continue end
+                
+                local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                if dist < fov and dist < closestDist then
+                    closest = player
+                    closestDist = dist
+                end
+            end
+        end
+        return closest
+    end
+
+    local function aimbotLoop()
+        if not state.enabled or not state.aimbot.enabled then return end
+        
+        local target = findBestTarget(state.aimbot.fov, state.aimbot.visibleCheck)
+        if target then
+            local targetPart = getTargetPart(target)
+            if targetPart then
+                local camera = Camera
+                local targetPos = targetPart.Position
+                local lookAt = CFrame.lookAt(camera.CFrame.Position, targetPos)
+                camera.CFrame = camera.CFrame:Lerp(lookAt, state.aimbot.smoothness)
+            end
+        end
+    end
+
+    -- ====== ТЕЛЕПОРТ ======
+    local function teleportToPlayer(targetPlayer)
+        if not LocalPlayer.Character or isTeamMate(targetPlayer) then return end
+        if not isPlayerAlive(targetPlayer) then return end
+        
+        local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if not rootPart then return end
+        
+        local targetRoot = targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if not targetRoot then return end
+        
+        local direction
+        local mode = state.teleport.mode
+        
+        if mode == "Front" then
+            direction = (targetRoot.Position - rootPart.Position).Unit
+        elseif mode == "Behind" then
+            direction = (rootPart.Position - targetRoot.Position).Unit
+        else
+            direction = Vector3.new(math.random(-100, 100), 0, math.random(-100, 100)).Unit
+        end
+        
+        local newPos = targetRoot.Position + direction * state.teleport.distance
+        rootPart.CFrame = CFrame.new(newPos)
+    end
+
+    -- ====== СОЗДАНИЕ GUI ======
+    local mainTab = window:CreateTab("Main", "lucide-home")
+    local aimTab = window:CreateTab("Aimbot", "lucide-crosshair")
+    local silentTab = window:CreateTab("Silent Aim", "lucide-bullseye")
+    local teleTab = window:CreateTab("Teleports", "lucide-map-pin")
+    local espTab = window:CreateTab("ESP", "lucide-eye")
+    local settingsTab = window:CreateTab("Settings", "lucide-settings")
+
+    -- Вкладка MAIN
+    local mainSection = mainTab:Section("Control Panel")
+    mainSection:Paragraph("", "by Witoshik", 0)
+    mainSection:Toggle("Enable Script", state.enabled, function(val)
+        state.enabled = val
+        if not val then
+            for _, esp in pairs(espObjects) do
+                esp.Box.Visible = false
+                esp.Name.Visible = false
+                esp.Health.Visible = false
+                for _, bone in pairs(esp.Skeleton) do
+                    if bone then bone.Visible = false end
+                end
+            end
+        end
+    end, 1)
+
+    mainSection:Toggle("Unlock Mouse", state.mouseUnlock, function(val)
+        state.mouseUnlock = val
+        toggleMouseUnlock(val)
+    end, 2)
+
+    mainSection:Paragraph("Status", "Script is " .. (state.enabled and "Active" or "Inactive"), 3)
+
+    -- Вкладка Aimbot
+    local aimSection = aimTab:Section("Aimbot Settings")
+    aimSection:Paragraph("Info", "Aimbot works ALWAYS | Only alive targets", 0)
+    aimSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
+    aimSection:Toggle("Enable Aimbot", state.aimbot.enabled, function(val)
+        state.aimbot.enabled = val
+        if val then
+            if not mainMaid._aimbotTask then
+                mainMaid._aimbotTask = RunService.RenderStepped:Connect(aimbotLoop)
+                print("[Aimbot] Enabled")
             end
         else
-            -- Скрываем все кости если скелет выключен или игрок мертв
-            for _, bone in pairs(esp.Skeleton) do
-                if bone then 
-                    bone.Visible = false
+            if mainMaid._aimbotTask then
+                mainMaid._aimbotTask:Disconnect()
+                mainMaid._aimbotTask = nil
+                print("[Aimbot] Disabled")
+            end
+        end
+    end, 2)
+    aimSection:Slider("FOV", 50, 500, state.aimbot.fov, 10, function(val) state.aimbot.fov = val end, 3)
+    aimSection:Slider("Smoothness", 0.1, 0.9, state.aimbot.smoothness, 0.05, function(val) state.aimbot.smoothness = val end, 4)
+
+    -- Вкладка Silent Aim
+    local silentSection = silentTab:Section("Silent Aim Settings")
+    silentSection:Paragraph("Info", "Bullets fly to enemies within the radius", 0)
+    silentSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
+    silentSection:Toggle("Enable Silent Aim", state.silentAim.enabled, function(val)
+        state.silentAim.enabled = val
+        if val then
+            checkWeapons()
+            if not mainMaid._silentTask then
+                mainMaid._silentTask = RunService.RenderStepped:Connect(function()
+                    if not state.enabled or not state.silentAim.enabled then return end
+                    silentTarget = getSilentAimTarget()
+                    updateFovCircle()
+                end)
+            end
+            print("[Silent Aim] Enabled!")
+        else
+            if mainMaid._silentTask then
+                mainMaid._silentTask:Disconnect()
+                mainMaid._silentTask = nil
+            end
+            silentTarget = nil
+            if fovCircle then fovCircle.Visible = false end
+            print("[Silent Aim] Disabled")
+        end
+    end, 2)
+    silentSection:Slider("Silent FOV", 50, 500, state.silentAim.fov, 10, function(val)
+        state.silentAim.fov = val
+        updateFovCircle()
+    end, 3)
+    silentSection:Toggle("Show FOV Circle", state.silentAim.showCircle, function(val)
+        state.silentAim.showCircle = val
+        if val then
+            if not fovCircle then createFovCircle() end
+            updateFovCircle()
+        else
+            if fovCircle then fovCircle.Visible = false end
+        end
+    end, 4)
+    silentSection:Toggle("Team Check", state.silentAim.teamCheck, function(val)
+        state.silentAim.teamCheck = val
+    end, 5)
+    silentSection:Toggle("Shoot Through Walls", state.silentAim.shootThroughWalls, function(val)
+        state.silentAim.shootThroughWalls = val
+    end, 6)
+
+    -- Вкладка Teleports
+    local teleSection = teleTab:Section("Teleport Settings")
+    teleSection:Toggle("Enable Teleports", state.teleport.enabled, function(val) state.teleport.enabled = val end, 1)
+    teleSection:Dropdown("Teleport Mode", {"Front", "Behind", "Random"}, state.teleport.mode, function(val) state.teleport.mode = val end, 2)
+    teleSection:Keybind("Teleport Key", state.teleport.key, function(key) state.teleport.key = key end, 3)
+    teleSection:Slider("Teleport Distance", 10, 200, state.teleport.distance, 5, function(val) state.teleport.distance = val end, 4)
+
+    -- Вкладка ESP
+    local espSection = espTab:Section("ESP Settings")
+    espSection:Paragraph("Info", "Shows players through walls | Hides when dead", 0)
+    espSection:Toggle("Enable ESP", state.esp.enabled, function(val)
+        state.esp.enabled = val
+        if val then
+            if not mainMaid._espTask then
+                mainMaid._espTask = RunService.RenderStepped:Connect(updateESP)
+            end
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer then createESPObject(player) end
+            end
+        else
+            if mainMaid._espTask then
+                mainMaid._espTask:Disconnect()
+                mainMaid._espTask = nil
+            end
+            for _, esp in pairs(espObjects) do
+                esp.Box.Visible = false
+                esp.Name.Visible = false
+                esp.Health.Visible = false
+                for _, bone in pairs(esp.Skeleton) do
+                    if bone then bone.Visible = false end
                 end
             end
         end
-    end
-end
-
--- ====== АИМБОТ ======
-local function findBestTarget(fov, checkVisible)
-    if not LocalPlayer.Character then return nil end
-    
-    local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return nil end
-    
-    local closest = nil
-    local closestDist = math.huge
-    local camera = Camera
-    local center = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
-    
-    for _, player in ipairs(getPlayers()) do
-        if isTeamMate(player) then continue end
-        if not isPlayerAlive(player) then continue end
-        
-        local targetPart = getTargetPart(player)
-        if targetPart then
-            local screenPos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
-            if checkVisible and not onScreen then continue end
-            
-            local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-            if dist < fov and dist < closestDist then
-                closest = player
-                closestDist = dist
+    end, 1)
+    espSection:Toggle("Boxes", state.esp.boxes, function(val) state.esp.boxes = val end, 2)
+    espSection:Toggle("Names", state.esp.names, function(val) state.esp.names = val end, 3)
+    espSection:Toggle("Skeleton", state.esp.skeleton, function(val)
+        state.esp.skeleton = val
+        if not val then
+            for _, esp in pairs(espObjects) do
+                for _, bone in pairs(esp.Skeleton) do
+                    if bone then bone.Visible = false end
+                end
             end
         end
-    end
-    return closest
-end
-
-local function aimbotLoop()
-    if not state.enabled or not state.aimbot.enabled then return end
-    
-    local target = findBestTarget(state.aimbot.fov, state.aimbot.visibleCheck)
-    if target then
-        local targetPart = getTargetPart(target)
-        if targetPart then
-            local camera = Camera
-            local targetPos = targetPart.Position
-            local lookAt = CFrame.lookAt(camera.CFrame.Position, targetPos)
-            camera.CFrame = camera.CFrame:Lerp(lookAt, state.aimbot.smoothness)
-        end
-    end
-end
-
--- ====== ТЕЛЕПОРТ ======
-local function teleportToPlayer(targetPlayer)
-    if not LocalPlayer.Character or isTeamMate(targetPlayer) then return end
-    if not isPlayerAlive(targetPlayer) then return end
-    
-    local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return end
-    
-    local targetRoot = targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not targetRoot then return end
-    
-    local direction
-    local mode = state.teleport.mode
-    
-    if mode == "Front" then
-        direction = (targetRoot.Position - rootPart.Position).Unit
-    elseif mode == "Behind" then
-        direction = (rootPart.Position - targetRoot.Position).Unit
-    else
-        direction = Vector3.new(math.random(-100, 100), 0, math.random(-100, 100)).Unit
-    end
-    
-    local newPos = targetRoot.Position + direction * state.teleport.distance
-    rootPart.CFrame = CFrame.new(newPos)
-end
-
--- ====== СОЗДАНИЕ GUI ======
-local mainTab = window:CreateTab("Main", "lucide-home")
-local aimTab = window:CreateTab("Aimbot", "lucide-crosshair")
-local silentTab = window:CreateTab("Silent Aim", "lucide-bullseye")
-local teleTab = window:CreateTab("Teleports", "lucide-map-pin")
-local espTab = window:CreateTab("ESP", "lucide-eye")
-local settingsTab = window:CreateTab("Settings", "lucide-settings")
-
--- Вкладка MAIN
-local mainSection = mainTab:Section("Control Panel")
-mainSection:Paragraph("", "by Witoshik", 0)
-mainSection:Toggle("Enable Script", state.enabled, function(val)
-    state.enabled = val
-    if not val then
+    end, 4)
+    espSection:Toggle("Health Bar", state.esp.healthBar, function(val) state.esp.healthBar = val end, 5)
+    espSection:Slider("Distance", 50, 5000, state.esp.distance, 5, function(val) state.esp.distance = val end, 6)
+    espSection:ColorPicker("ESP Color", state.esp.color, function(color)
+        state.esp.color = color
         for _, esp in pairs(espObjects) do
-            esp.Box.Visible = false
-            esp.Name.Visible = false
-            esp.Health.Visible = false
+            esp.Box.Color = color
             for _, bone in pairs(esp.Skeleton) do
-                if bone then bone.Visible = false end
+                if bone then bone.Color = color end
             end
         end
-    end
-end, 1)
+    end, 7)
 
-mainSection:Toggle("Unlock Mouse", state.mouseUnlock, function(val)
-    state.mouseUnlock = val
-    toggleMouseUnlock(val)
-end, 2)
-
-mainSection:Paragraph("Status", "Script is " .. (state.enabled and "Active" or "Inactive"), 3)
-
--- Вкладка Aimbot
-local aimSection = aimTab:Section("Aimbot Settings")
-aimSection:Paragraph("Info", "Aimbot works ALWAYS | Only alive targets", 0)
-aimSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
-aimSection:Toggle("Enable Aimbot", state.aimbot.enabled, function(val)
-    state.aimbot.enabled = val
-    if val then
-        if not mainMaid._aimbotTask then
-            mainMaid._aimbotTask = RunService.RenderStepped:Connect(aimbotLoop)
-            print("[Aimbot] Enabled")
+    -- Вкладка Settings
+    local settingsSection = settingsTab:Section("UI Settings")
+    settingsSection:Slider("Menu Transparency", 0, 1, state.transparency, 0.05, function(val)
+        state.transparency = val
+        updateTransparency()
+    end, 1)
+    settingsSection:Slider("Blur Size", 0, 24, state.blurSize, 1, function(val)
+        state.blurSize = val
+        window.BlurSize = val
+    end, 2)
+    settingsSection:Keybind("Toggle Menu Key", state.binds.toggleMenu, function(key)
+        if key then
+            state.binds.toggleMenu = key
+            window.ToggleKey = key
+            print("[Settings] Menu key changed to:", key.Name)
         end
-    else
-        if mainMaid._aimbotTask then
-            mainMaid._aimbotTask:Disconnect()
-            mainMaid._aimbotTask = nil
-            print("[Aimbot] Disabled")
+    end, 3)
+    settingsSection:Keybind("Unlock Mouse Key", state.binds.unlockMouse, function(key)
+        if key then
+            state.binds.unlockMouse = key
+            print("[Settings] Unlock mouse key changed to:", key.Name)
         end
-    end
-end, 2)
-aimSection:Slider("FOV", 50, 500, state.aimbot.fov, 10, function(val) state.aimbot.fov = val end, 3)
-aimSection:Slider("Smoothness", 0.1, 0.9, state.aimbot.smoothness, 0.05, function(val) state.aimbot.smoothness = val end, 4)
+    end, 4)
+    settingsSection:Keybind("Disable All Key", state.binds.disableAll, function(key)
+        if key then
+            state.binds.disableAll = key
+            print("[Settings] Disable all key changed to:", key.Name)
+        end
+    end, 5)
+    settingsSection:Paragraph("Current Binds", 
+        "Menu: " .. tostring(state.binds.toggleMenu.Name) .. "\n" ..
+        "Unlock Mouse: " .. tostring(state.binds.unlockMouse.Name) .. "\n" ..
+        "Disable All: " .. tostring(state.binds.disableAll.Name), 6)
 
--- Вкладка Silent Aim
-local silentSection = silentTab:Section("Silent Aim Settings")
-silentSection:Paragraph("Info", "Bullets fly to enemies within the radius", 0)
-silentSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
-silentSection:Toggle("Enable Silent Aim", state.silentAim.enabled, function(val)
-    state.silentAim.enabled = val
-    if val then
-        checkWeapons()
-        if not mainMaid._silentTask then
-            mainMaid._silentTask = RunService.RenderStepped:Connect(function()
-                if not state.enabled or not state.silentAim.enabled then return end
-                silentTarget = getSilentAimTarget()
-                updateFovCircle()
+    -- ====== ОБРАБОТКА КЛАВИШ ======
+    mainMaid:Give(UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        if input.KeyCode == state.binds.unlockMouse then
+            state.mouseUnlock = not state.mouseUnlock
+            toggleMouseUnlock(state.mouseUnlock)
+        end
+        
+        if state.enabled and state.teleport.enabled and input.KeyCode == state.teleport.key then
+            local target = getSilentAimTarget()
+            if target and not isTeamMate(target) and isPlayerAlive(target) then
+                teleportToPlayer(target)
+                print("[Teleport] Teleported to", target.Name)
+            end
+        end
+        
+        if input.KeyCode == state.binds.disableAll then
+            print("[DISABLE] Disabling ALL features...")
+            state.enabled = false
+            state.aimbot.enabled = false
+            if mainMaid._aimbotTask then
+                mainMaid._aimbotTask:Disconnect()
+                mainMaid._aimbotTask = nil
+            end
+            
+            state.silentAim.enabled = false
+            if mainMaid._silentTask then
+                mainMaid._silentTask:Disconnect()
+                mainMaid._silentTask = nil
+            end
+            silentTarget = nil
+            if fovCircle then fovCircle.Visible = false end
+            
+            state.esp.enabled = false
+            if mainMaid._espTask then
+                mainMaid._espTask:Disconnect()
+                mainMaid._espTask = nil
+            end
+            for _, esp in pairs(espObjects) do
+                esp.Box.Visible = false
+                esp.Name.Visible = false
+                esp.Health.Visible = false
+                for _, bone in pairs(esp.Skeleton) do
+                    if bone then bone.Visible = false end
+                end
+            end
+            
+            state.teleport.enabled = false
+            state.silentAim.shootThroughWalls = false
+            if state.mouseUnlock then
+                state.mouseUnlock = false
+                toggleMouseUnlock(false)
+            end
+            print("[DISABLE] ALL features disabled!")
+        end
+    end))
+
+    -- ====== ОТСЛЕЖИВАНИЕ ======
+    mainMaid:Give(Players.PlayerAdded:Connect(function(player)
+        if state.esp.enabled then
+            task.wait(0.5)
+            createESPObject(player)
+        end
+    end))
+
+    mainMaid:Give(LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        if state.silentAim.enabled then
+            checkWeapons()
+        end
+    end))
+
+    mainMaid:Give(RunService.RenderStepped:Connect(function()
+        if state.enabled and state.silentAim.enabled then
+            checkWeapons()
+            updateFovCircle()
+        end
+    end))
+
+    -- ====== КОНФИГИ ======
+    window:CreateConfigSection(mainTab, "Configs")
+
+    -- ====== ОЧИСТКА ======
+    window:OnDestroy(function()
+        toggleMouseUnlock(false)
+        if fovCircle then
+            pcall(function() fovCircle:Remove() end)
+            fovCircle = nil
+        end
+        for _, esp in pairs(espObjects) do
+            pcall(function()
+                if esp.Box then esp.Box:Remove() end
+                if esp.Name then esp.Name:Remove() end
+                if esp.Health then esp.Health:Remove() end
+                for _, bone in pairs(esp.Skeleton) do
+                    if bone then 
+                        pcall(function() bone:Remove() end)
+                    end
+                end
+                esp.Skeleton = {}
             end)
         end
-        print("[Silent Aim] Enabled!")
-    else
-        if mainMaid._silentTask then
-            mainMaid._silentTask:Disconnect()
-            mainMaid._silentTask = nil
-        end
-        silentTarget = nil
-        if fovCircle then fovCircle.Visible = false end
-        print("[Silent Aim] Disabled")
-    end
-end, 2)
-silentSection:Slider("Silent FOV", 50, 500, state.silentAim.fov, 10, function(val)
-    state.silentAim.fov = val
-    updateFovCircle()
-end, 3)
-silentSection:Toggle("Show FOV Circle", state.silentAim.showCircle, function(val)
-    state.silentAim.showCircle = val
-    if val then
-        if not fovCircle then createFovCircle() end
-        updateFovCircle()
-    else
-        if fovCircle then fovCircle.Visible = false end
-    end
-end, 4)
-silentSection:Toggle("Team Check", state.silentAim.teamCheck, function(val)
-    state.silentAim.teamCheck = val
-end, 5)
--- НОВЫЙ TOGGLE ДЛЯ СТРЕЛЬБЫ СКВОЗЬ СТЕНЫ
-silentSection:Toggle("Shoot Through Walls", state.silentAim.shootThroughWalls, function(val)
-    state.silentAim.shootThroughWalls = val
-end, 6)
+        espObjects = {}
+        hookedWeapons = {}
+        mainMaid:Cleanup()
+        print("Leek Cheats unloaded successfully!")
+    end)
 
--- Вкладка Teleports
-local teleSection = teleTab:Section("Teleport Settings")
-teleSection:Toggle("Enable Teleports", state.teleport.enabled, function(val) state.teleport.enabled = val end, 1)
-teleSection:Dropdown("Teleport Mode", {"Front", "Behind", "Random"}, state.teleport.mode, function(val) state.teleport.mode = val end, 2)
-teleSection:Keybind("Teleport Key", state.teleport.key, function(key) state.teleport.key = key end, 3)
-teleSection:Slider("Teleport Distance", 10, 200, state.teleport.distance, 5, function(val) state.teleport.distance = val end, 4)
-
--- Вкладка ESP
-local espSection = espTab:Section("ESP Settings")
-espSection:Paragraph("Info", "Shows players through walls | Hides when dead", 0)
-espSection:Toggle("Enable ESP", state.esp.enabled, function(val)
-    state.esp.enabled = val
-    if val then
-        if not mainMaid._espTask then
-            mainMaid._espTask = RunService.RenderStepped:Connect(updateESP)
-        end
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then createESPObject(player) end
-        end
-    else
-        if mainMaid._espTask then
-            mainMaid._espTask:Disconnect()
-            mainMaid._espTask = nil
-        end
-        for _, esp in pairs(espObjects) do
-            esp.Box.Visible = false
-            esp.Name.Visible = false
-            esp.Health.Visible = false
-            for _, bone in pairs(esp.Skeleton) do
-                if bone then bone.Visible = false end
-            end
-        end
-    end
-end, 1)
-espSection:Toggle("Boxes", state.esp.boxes, function(val) state.esp.boxes = val end, 2)
-espSection:Toggle("Names", state.esp.names, function(val) state.esp.names = val end, 3)
-espSection:Toggle("Skeleton", state.esp.skeleton, function(val)
-    state.esp.skeleton = val
-    if not val then
-        for _, esp in pairs(espObjects) do
-            for _, bone in pairs(esp.Skeleton) do
-                if bone then bone.Visible = false end
-            end
-        end
-    end
-end, 4)
-espSection:Toggle("Health Bar", state.esp.healthBar, function(val) state.esp.healthBar = val end, 5)
-espSection:Slider("Distance", 50, 5000, state.esp.distance, 5, function(val) state.esp.distance = val end, 6)
-espSection:ColorPicker("ESP Color", state.esp.color, function(color)
-    state.esp.color = color
-    for _, esp in pairs(espObjects) do
-        esp.Box.Color = color
-        for _, bone in pairs(esp.Skeleton) do
-            if bone then bone.Color = color end
-        end
-    end
-end, 7)
-
--- Вкладка Settings
-local settingsSection = settingsTab:Section("UI Settings")
-settingsSection:Slider("Menu Transparency", 0, 1, state.transparency, 0.05, function(val)
-    state.transparency = val
+    -- ====== ПРИМЕНЯЕМ НАЧАЛЬНЫЕ НАСТРОЙКИ ======
     updateTransparency()
-end, 1)
-settingsSection:Slider("Blur Size", 0, 24, state.blurSize, 1, function(val)
-    state.blurSize = val
-    window.BlurSize = val
-end, 2)
-settingsSection:Keybind("Toggle Menu Key", state.binds.toggleMenu, function(key)
-    if key then
-        state.binds.toggleMenu = key
-        window.ToggleKey = key
-        print("[Settings] Menu key changed to:", key.Name)
-    end
-end, 3)
-settingsSection:Keybind("Unlock Mouse Key", state.binds.unlockMouse, function(key)
-    if key then
-        state.binds.unlockMouse = key
-        print("[Settings] Unlock mouse key changed to:", key.Name)
-    end
-end, 4)
-settingsSection:Keybind("Disable All Key", state.binds.disableAll, function(key)
-    if key then
-        state.binds.disableAll = key
-        print("[Settings] Disable all key changed to:", key.Name)
-    end
-end, 5)
-settingsSection:Paragraph("Current Binds", 
-    "Menu: " .. tostring(state.binds.toggleMenu.Name) .. "\n" ..
-    "Unlock Mouse: " .. tostring(state.binds.unlockMouse.Name) .. "\n" ..
-    "Disable All: " .. tostring(state.binds.disableAll.Name), 6)
+    window.BlurSize = state.blurSize
+    createFovCircle()
 
--- ====== ОБРАБОТКА КЛАВИШ ======
-mainMaid:Give(UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    
-    if input.KeyCode == state.binds.unlockMouse then
-        state.mouseUnlock = not state.mouseUnlock
-        toggleMouseUnlock(state.mouseUnlock)
-    end
-    
-    if state.enabled and state.teleport.enabled and input.KeyCode == state.teleport.key then
-        local target = getSilentAimTarget()
-        if target and not isTeamMate(target) and isPlayerAlive(target) then
-            teleportToPlayer(target)
-            print("[Teleport] Teleported to", target.Name)
-        end
-    end
-    
-    if input.KeyCode == state.binds.disableAll then
-        print("[DISABLE] Disabling ALL features...")
-        state.enabled = false
-        state.aimbot.enabled = false
-        if mainMaid._aimbotTask then
-            mainMaid._aimbotTask:Disconnect()
-            mainMaid._aimbotTask = nil
-        end
-        
-        state.silentAim.enabled = false
-        if mainMaid._silentTask then
-            mainMaid._silentTask:Disconnect()
-            mainMaid._silentTask = nil
-        end
-        silentTarget = nil
-        if fovCircle then fovCircle.Visible = false end
-        
-        state.esp.enabled = false
-        if mainMaid._espTask then
-            mainMaid._espTask:Disconnect()
-            mainMaid._espTask = nil
-        end
-        for _, esp in pairs(espObjects) do
-            esp.Box.Visible = false
-            esp.Name.Visible = false
-            esp.Health.Visible = false
-            for _, bone in pairs(esp.Skeleton) do
-                if bone then bone.Visible = false end
-            end
-        end
-        
-        state.teleport.enabled = false
-        state.silentAim.shootThroughWalls = false
-        if state.mouseUnlock then
-            state.mouseUnlock = false
-            toggleMouseUnlock(false)
-        end
-        print("[DISABLE] ALL features disabled!")
-    end
-end))
+    -- ====== ИНФОРМАЦИЯ ======
+    print("====================================")
+    print("Leek Cheats loaded successfully!")
+    print("by Witoshik")
+    print("====================================")
+    print("Press HOME to toggle GUI")
+    print("AIMBOT: Works ALWAYS | Only alive targets")
+    print("SILENT AIM: Bullets fly to ALIVE enemies in radius")
+    print("  - NO aim movement!")
+    print("  - Show FOV Circle: Show range circle")
+    print("  - Shoot Through Walls: OFF by default")
+    print("TELEPORT: Press T to teleport (alive enemies only)")
+    print("ESP: Shows players through walls | Hides when dead")
+    print("DISABLE ALL: Press F8")
+    print("====================================")
 
--- ====== ОТСЛЕЖИВАНИЕ ======
-mainMaid:Give(Players.PlayerAdded:Connect(function(player)
-    if state.esp.enabled then
-        task.wait(0.5)
-        createESPObject(player)
-    end
-end))
+    return window
+end
 
-mainMaid:Give(LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(0.5)
-    if state.silentAim.enabled then
-        checkWeapons()
-    end
-end))
+-- ====== ЗАПУСК ОСНОВНОГО СКРИПТА ======
+-- Ждем загрузку и запускаем
+repeat task.wait() until isLoadingComplete
 
-mainMaid:Give(RunService.RenderStepped:Connect(function()
-    if state.enabled and state.silentAim.enabled then
-        checkWeapons()
-        updateFovCircle()
-    end
-end))
-
--- ====== КОНФИГИ ======
-window:CreateConfigSection(mainTab, "Configs")
-
--- ====== ИСПРАВЛЕННАЯ ОЧИСТКА ======
-window:OnDestroy(function()
-    toggleMouseUnlock(false)
-    if fovCircle then
-        pcall(function() fovCircle:Remove() end)
-        fovCircle = nil
-    end
-    for _, esp in pairs(espObjects) do
-        pcall(function()
-            if esp.Box then esp.Box:Remove() end
-            if esp.Name then esp.Name:Remove() end
-            if esp.Health then esp.Health:Remove() end
-            for _, bone in pairs(esp.Skeleton) do
-                if bone then 
-                    pcall(function() bone:Remove() end)
-                end
-            end
-            esp.Skeleton = {}
-        end)
-    end
-    espObjects = {}
-    hookedWeapons = {}
-    mainMaid:Cleanup()
-    print("Leek Cheats unloaded successfully!")
-end)
-
--- ====== ПРИМЕНЯЕМ НАЧАЛЬНЫЕ НАСТРОЙКИ ======
-updateTransparency()
-window.BlurSize = state.blurSize
-createFovCircle()
-
--- ====== ИНФОРМАЦИЯ ======
-print("====================================")
-print("Leek Cheats loaded successfully!")
-print("by Witoshik")
-print("====================================")
-print("Press HOME to toggle GUI")
-print("AIMBOT: Works ALWAYS | Only alive targets")
-print("SILENT AIM: Bullets fly to ALIVE enemies in radius")
-print("  - NO aim movement!")
-print("  - Show FOV Circle: Show range circle")
-print("  - Shoot Through Walls: OFF by default")
-print("TELEPORT: Press T to teleport (alive enemies only)")
-print("ESP: Shows players through walls | Hides when dead")
-print("DISABLE ALL: Press F8")
-print("====================================")
-
-return window
+-- Запускаем с защитой от ошибок
+local success, err = pcall(main)
+if not success then
+    warn("Failed to start main script:", err)
+    -- Показываем ошибку на экране
+    local errorGui = Instance.new("ScreenGui")
+    errorGui.Parent = game:GetService("CoreGui")
+    local errorText = Instance.new("TextLabel")
+    errorText.Size = UDim2.new(1, 0, 1, 0)
+    errorText.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    errorText.BackgroundTransparency = 0.7
+    errorText.Text = "Script Error!\n" .. tostring(err) .. "\nCheck console for details"
+    errorText.TextColor3 = Color3.fromRGB(255, 0, 0)
+    errorText.TextSize = 24
+    errorText.Font = Enum.Font.GothamBold
+    errorText.TextWrapped = true
+    errorText.Parent = errorGui
+    print("ERROR:", err)
+end
