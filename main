@@ -13,7 +13,7 @@ local function createLoadingScreen()
     -- ЧЕРНЫЙ ФОН (полный экран - 100% размер)
     local background = Instance.new("Frame")
     background.Name = "Background"
-    background.Size = UDim2.new(1, 0, 1, 0) -- ВЕСЬ ЭКРАН
+    background.Size = UDim2.new(1, 0, 1, 0)
     background.Position = UDim2.new(0, 0, 0, 0)
     background.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     background.BackgroundTransparency = 0
@@ -32,7 +32,6 @@ local function createLoadingScreen()
         star.BorderSizePixel = 0
         star.Parent = screenGui
         
-        -- Свечение для звезд
         local glow = Instance.new("Frame")
         glow.Name = "Glow_" .. i
         glow.Size = UDim2.new(0, size * 4, 0, size * 4)
@@ -69,7 +68,6 @@ local function createLoadingScreen()
     for i = 1, #text do
         local char = text:sub(i, i)
         
-        -- Основная буква
         local letter = Instance.new("TextLabel")
         letter.Name = "Letter_" .. i
         letter.Size = UDim2.new(0, letterWidth, 0, letterSize)
@@ -86,7 +84,6 @@ local function createLoadingScreen()
         letter.TextTransparency = 1
         letter.Parent = textContainer
         
-        -- Неоновое свечение буквы
         local glow = Instance.new("Frame")
         glow.Name = "Glow_" .. i
         glow.Size = UDim2.new(0, letterWidth + 40, 0, letterSize + 40)
@@ -96,12 +93,11 @@ local function createLoadingScreen()
         glow.BorderSizePixel = 0
         glow.Parent = textContainer
         
-        -- Тень буквы
         local shadow = Instance.new("TextLabel")
         shadow.Name = "Shadow_" .. i
         shadow.Size = UDim2.new(0, letterWidth, 0, letterSize)
         shadow.Position = UDim2.new((i-1) / #text, 3, 0.5, -letterSize/2 + 3)
-shadow.BackgroundTransparency = 1
+        shadow.BackgroundTransparency = 1
         shadow.Text = char
         shadow.TextColor3 = Color3.fromRGB(100, 100, 150)
         shadow.TextSize = letterSize
@@ -149,7 +145,6 @@ shadow.BackgroundTransparency = 1
     loadingBar.BorderSizePixel = 0
     loadingBar.Parent = loadingBarBg
     
-    -- Свечение полосы
     local loadingGlow = Instance.new("Frame")
     loadingGlow.Name = "LoadingGlow"
     loadingGlow.Size = UDim2.new(0, 0, 1, 10)
@@ -159,7 +154,6 @@ shadow.BackgroundTransparency = 1
     loadingGlow.BorderSizePixel = 0
     loadingGlow.Parent = loadingBar
     
-    -- ====== ПРОЦЕНТЫ ======
     local percentLabel = Instance.new("TextLabel")
     percentLabel.Name = "PercentLabel"
     percentLabel.Size = UDim2.new(1, 0, 0, 30)
@@ -182,7 +176,6 @@ local function animateStars(stars)
         while true do
             for _, s in ipairs(stars) do
                 if s.frame and s.frame.Parent then
-                    -- Движение звезд
                     local x = s.frame.Position.X.Scale + s.speed * math.cos(s.direction)
                     local y = s.frame.Position.Y.Scale + s.speed * math.sin(s.direction)
                     if x > 1 then x = 0 end
@@ -191,14 +184,12 @@ local function animateStars(stars)
                     if y < 0 then y = 1 end
                     s.frame.Position = UDim2.new(x, 0, y, 0)
                     
-                    -- Мерцание звезд
                     local twinkle = math.sin(tick() * s.twinkleSpeed + s.twinkleOffset)
                     local transparency = 0.2 + (twinkle + 1) / 2 * 0.6
                     s.frame.BackgroundTransparency = transparency
                     s.glow.BackgroundTransparency = 0.85 + (twinkle + 1) / 2 * 0.12
                     
-                    -- Размер звезд (пульсация)
-local pulse = 1 + (twinkle + 1) / 2 * 0.5
+                    local pulse = 1 + (twinkle + 1) / 2 * 0.5
                     s.frame.Size = UDim2.new(0, s.size * pulse, 0, s.size * pulse)
                     s.glow.Size = UDim2.new(0, s.size * 4 * pulse, 0, s.size * 4 * pulse)
                 end
@@ -208,7 +199,7 @@ local pulse = 1 + (twinkle + 1) / 2 * 0.5
     end)
 end
 
--- ====== АНИМАЦИЯ ПОЯВЛЕНИЯ БУКВ (УСКОРЕННАЯ) ======
+-- ====== АНИМАЦИЯ ПОЯВЛЕНИЯ БУКВ ======
 local function animateLetters(letters, speed, callback)
     local index = 1
     local function showNextLetter()
@@ -217,21 +208,21 @@ local function animateLetters(letters, speed, callback)
             local transparency = 1
             local function fadeIn()
                 if transparency > 0 then
-                    transparency = transparency - 0.06 -- БЫСТРЕЕ (было 0.03)
+                    transparency = transparency - 0.06
                     l.letter.TextTransparency = transparency
                     l.shadow.TextTransparency = transparency
                     l.glow.BackgroundTransparency = 0.95 + (1 - transparency) * 0.85
-                    task.wait(0.01) -- БЫСТРЕЕ (было 0.015)
+                    task.wait(0.01)
                     fadeIn()
                 else
                     l.glow.BackgroundTransparency = 0.2
-                    task.wait(0.03) -- БЫСТРЕЕ (было 0.05)
+                    task.wait(0.03)
                     l.glow.BackgroundTransparency = 0.95
                 end
             end
             fadeIn()
             index = index + 1
-            task.wait(speed) -- 0.05 сек между буквами (было 0.08)
+            task.wait(speed)
             showNextLetter()
         else
             if callback then callback() end
@@ -243,10 +234,8 @@ end
 -- ====== ЗАПУСК ЗАГРУЗОЧНОГО ЭКРАНА ======
 local screenGui, letters, subtitle, loadingBar, loadingGlow, percentLabel, stars = createLoadingScreen()
 
--- Запускаем анимацию звезд
 animateStars(stars)
 
--- ====== АНИМАЦИЯ ЗАГРУЗКИ ======
 local loadingProgress = 0
 local loadingSpeed = 0.02
 local isLoadingComplete = false
@@ -274,27 +263,21 @@ local function updateLoading()
     end
 end
 
--- ====== ЗАПУСК АНИМАЦИЙ ======
--- Буквы появляются быстрее (0.05 сек между буквами)
 animateLetters(letters, 0.05, function()
-    task.wait(0.15) -- Меньше паузы (было 0.2)
-    
-    -- Плавное появление подписи
+    task.wait(0.15)
     local function fadeInSubtitle()
         local transparency = subtitle.TextTransparency
         if transparency > 0 then
-            subtitle.TextTransparency = transparency - 0.04 -- БЫСТРЕЕ (было 0.03)
-            task.wait(0.015) -- БЫСТРЕЕ (было 0.02)
+            subtitle.TextTransparency = transparency - 0.04
+            task.wait(0.015)
             fadeInSubtitle()
         end
     end
     fadeInSubtitle()
-    
-    task.wait(0.2) -- Меньше паузы (было 0.3)
+    task.wait(0.2)
     updateLoading()
 end)
 
--- ====== УДАЛЕНИЕ ЗАГРУЗОЧНОГО ЭКРАНА ======
 local function fadeOutLoadingScreen()
     if isLoadingComplete then
         local function fadeOut()
@@ -309,7 +292,7 @@ local function fadeOutLoadingScreen()
                             child.TextTransparency = math.min(child.TextTransparency + 0.025, 1)
                         end
                         if child:IsA("Frame") and child.Name ~= "Background" then
-child.BackgroundTransparency = math.min(child.BackgroundTransparency + 0.025, 1)
+                            child.BackgroundTransparency = math.min(child.BackgroundTransparency + 0.025, 1)
                         end
                         if child:IsA("Frame") and child.Name:find("Star") then
                             child.BackgroundTransparency = math.min(child.BackgroundTransparency + 0.025, 1)
@@ -324,7 +307,7 @@ child.BackgroundTransparency = math.min(child.BackgroundTransparency + 0.025, 1)
             step()
         end
         
-        task.wait(0.3) -- Меньше паузы (было 0.5)
+        task.wait(0.3)
         fadeOut()
     else
         task.wait(0.05)
@@ -332,7 +315,6 @@ child.BackgroundTransparency = math.min(child.BackgroundTransparency + 0.025, 1)
     end
 end
 
--- Запускаем удаление
 task.spawn(function()
     while not isLoadingComplete do
         task.wait(0.05)
@@ -341,7 +323,6 @@ task.spawn(function()
 end)
 
 -- ====== ОСТАЛЬНОЙ КОД СКРИПТА ======
--- Загрузка билдера и утилит
 local Builder = loadstring(game:HttpGet("https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/builder.lua"))()
 local UTILS_URL = "https://raw.githubusercontent.com/pidaraks1488/moonware/refs/heads/main/src/utils/"
 
@@ -354,7 +335,6 @@ local function safeLoadUtil(name)
     return nil
 end
 
--- Загружаем утилиты
 local Maid = safeLoadUtil("maid")
 local Runtime = safeLoadUtil("runtime")
 
@@ -374,7 +354,6 @@ local blackWhiteTheme = {
     Bad = Color3.fromRGB(255, 100, 100),
 }
 
--- Создаём окно
 local window = Builder.new({
     Title = "Leek Cheats",
     ToggleKey = Enum.KeyCode.Home,
@@ -406,11 +385,10 @@ local window = Builder.new({
     },
 })
 
--- Регистрируем тему
 window:RegisterTheme("BlackWhite", blackWhiteTheme)
 window:SetTheme("BlackWhite")
 
--- Состояние скрипта
+-- ====== СОСТОЯНИЕ СКРИПТА ======
 local state = {
     enabled = false,
     mouseUnlock = false,
@@ -436,6 +414,7 @@ local state = {
         showCircle = false,
         hitChance = 100,
         teamCheck = true,
+        shootThroughWalls = false, -- НОВАЯ ОПЦИЯ
     },
     teleport = {
         enabled = false,
@@ -459,8 +438,7 @@ local mainMaid = Maid.new()
 
 -- Получение сервисов
 local Players = game:GetService("Players")
-local RunService =
-game:GetService("RunService")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
 local LocalPlayer = Players.LocalPlayer
@@ -477,7 +455,6 @@ local fovCircle = nil
 local hookedWeapons = {}
 local silentTarget = nil
 
--- Получение мыши
 pcall(function()
     mouse = LocalPlayer:GetMouse()
 end)
@@ -595,8 +572,7 @@ local function getSilentAimTarget()
     if not LocalPlayer.Character then return nil end
     
     local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then
-return nil end
+    if not rootPart then return nil end
     
     local closest = nil
     local closestDist = math.huge
@@ -614,10 +590,31 @@ return nil end
             local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
             
             if dist < fov and dist < closestDist then
+                -- ПРОВЕРКА НА ВИДИМОСТЬ (НЕ СКВОЗЬ СТЕНЫ)
+                if not state.silentAim.shootThroughWalls then
+                    local raycastParams = RaycastParams.new()
+                    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+                    
+                    local rayOrigin = camera.CFrame.Position
+                    local rayDirection = (targetPart.Position - rayOrigin).Unit * 1000
+                    local rayResult = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+                    
+                    -- Если луч не уперся в игрока или уперся в другого игрока - пропускаем
+                    if rayResult and rayResult.Instance then
+                        local hitPlayer = Players:GetPlayerFromCharacter(rayResult.Instance:FindFirstAncestorOfClass("Model"))
+                        if hitPlayer ~= player then
+                            -- Не видим цель
+                            goto continue
+                        end
+                    end
+                end
+                
                 closest = player
                 closestDist = dist
             end
         end
+        ::continue::
     end
     return closest
 end
@@ -687,8 +684,7 @@ local function hookWeapon(tool)
                                 elseif type(arg) == "CFrame" then
                                     args[i] = CFrame.new(targetPos)
                                 elseif type(arg) == "table" then
-                                    if arg.Position then
-arg.Position = targetPos end
+                                    if arg.Position then arg.Position = targetPos end
                                     if arg.p then arg.p = targetPos end
                                     if arg[1] and type(arg[1]) == "Vector3" then
                                         arg[1] = targetPos
@@ -789,6 +785,7 @@ local function getBonePositions(character)
     return bones
 end
 
+-- ====== ИСПРАВЛЕННАЯ ФУНКЦИЯ ESP ======
 local function updateESP()
     if not state.enabled or not state.esp.enabled or not hasDrawing then
         for _, esp in pairs(espObjects) do
@@ -824,8 +821,7 @@ local function updateESP()
         end
         
         local character = player.Character
-        if not
-character then continue end
+        if not character then continue end
         
         local rootPart = character:FindFirstChild("HumanoidRootPart")
         if not rootPart then continue end
@@ -849,6 +845,10 @@ character then continue end
             esp.Box.Visible = false
             esp.Name.Visible = false
             esp.Health.Visible = false
+            -- Скрываем скелет если игрок не на экране
+            for _, bone in pairs(esp.Skeleton) do
+                if bone then bone.Visible = false end
+            end
             continue
         end
         
@@ -892,8 +892,17 @@ character then continue end
             esp.Health.Visible = false
         end
         
+        -- ОТРИСОВКА СКЕЛЕТА С ПРОВЕРКОЙ ВИДИМОСТИ
         if state.esp.skeleton and not esp.isDead then
             local bones = getBonePositions(character)
+            
+            -- Скрываем лишние кости если их стало меньше
+            for i = #esp.Skeleton, #bones + 1, -1 do
+                if esp.Skeleton[i] then
+                    esp.Skeleton[i].Visible = false
+                end
+            end
+            
             for i, bone in ipairs(bones) do
                 local pos1, onScreen1 = camera:WorldToViewportPoint(bone[1])
                 local pos2, onScreen2 = camera:WorldToViewportPoint(bone[2])
@@ -913,8 +922,11 @@ character then continue end
                 end
             end
         else
+            -- Скрываем все кости если скелет выключен или игрок мертв
             for _, bone in pairs(esp.Skeleton) do
-                if bone then bone.Visible = false end
+                if bone then 
+                    bone.Visible = false
+                end
             end
         end
     end
@@ -936,8 +948,7 @@ local function findBestTarget(fov, checkVisible)
         if isTeamMate(player) then continue end
         if not isPlayerAlive(player) then continue end
         
-        local targetPart
-= getTargetPart(player)
+        local targetPart = getTargetPart(player)
         if targetPart then
             local screenPos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
             if checkVisible and not onScreen then continue end
@@ -1025,7 +1036,7 @@ end, 2)
 
 mainSection:Paragraph("Status", "Script is " .. (state.enabled and "Active" or "Inactive"), 3)
 
--- Остальные вкладки (сокращены для читаемости)
+-- Вкладка Aimbot
 local aimSection = aimTab:Section("Aimbot Settings")
 aimSection:Paragraph("Info", "Aimbot works ALWAYS | Only alive targets", 0)
 aimSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
@@ -1045,9 +1056,9 @@ aimSection:Toggle("Enable Aimbot", state.aimbot.enabled, function(val)
     end
 end, 2)
 aimSection:Slider("FOV", 50, 500, state.aimbot.fov, 10, function(val) state.aimbot.fov = val end, 3)
-aimSection:Slider("Smoothness", 0.1, 0.9, state.aimbot.smoothness, 0.05, function(val)
-state.aimbot.smoothness = val end, 4)
+aimSection:Slider("Smoothness", 0.1, 0.9, state.aimbot.smoothness, 0.05, function(val) state.aimbot.smoothness = val end, 4)
 
+-- Вкладка Silent Aim
 local silentSection = silentTab:Section("Silent Aim Settings")
 silentSection:Paragraph("Info", "Bullets fly to enemies within the radius", 0)
 silentSection:Paragraph("Target", "Always aims at the HEAD | Ignores teammates", 1)
@@ -1089,13 +1100,19 @@ end, 4)
 silentSection:Toggle("Team Check", state.silentAim.teamCheck, function(val)
     state.silentAim.teamCheck = val
 end, 5)
+-- НОВЫЙ TOGGLE ДЛЯ СТРЕЛЬБЫ СКВОЗЬ СТЕНЫ
+silentSection:Toggle("Shoot Through Walls", state.silentAim.shootThroughWalls, function(val)
+    state.silentAim.shootThroughWalls = val
+end, 6)
 
+-- Вкладка Teleports
 local teleSection = teleTab:Section("Teleport Settings")
 teleSection:Toggle("Enable Teleports", state.teleport.enabled, function(val) state.teleport.enabled = val end, 1)
 teleSection:Dropdown("Teleport Mode", {"Front", "Behind", "Random"}, state.teleport.mode, function(val) state.teleport.mode = val end, 2)
 teleSection:Keybind("Teleport Key", state.teleport.key, function(key) state.teleport.key = key end, 3)
 teleSection:Slider("Teleport Distance", 10, 200, state.teleport.distance, 5, function(val) state.teleport.distance = val end, 4)
 
+-- Вкладка ESP
 local espSection = espTab:Section("ESP Settings")
 espSection:Paragraph("Info", "Shows players through walls | Hides when dead", 0)
 espSection:Toggle("Enable ESP", state.esp.enabled, function(val)
@@ -1146,8 +1163,8 @@ espSection:ColorPicker("ESP Color", state.esp.color, function(color)
     end
 end, 7)
 
-local
-settingsSection = settingsTab:Section("UI Settings")
+-- Вкладка Settings
+local settingsSection = settingsTab:Section("UI Settings")
 settingsSection:Slider("Menu Transparency", 0, 1, state.transparency, 0.05, function(val)
     state.transparency = val
     updateTransparency()
@@ -1229,6 +1246,7 @@ mainMaid:Give(UserInputService.InputBegan:Connect(function(input, gameProcessed)
         end
         
         state.teleport.enabled = false
+        state.silentAim.shootThroughWalls = false
         if state.mouseUnlock then
             state.mouseUnlock = false
             toggleMouseUnlock(false)
@@ -1262,7 +1280,7 @@ end))
 -- ====== КОНФИГИ ======
 window:CreateConfigSection(mainTab, "Configs")
 
--- ====== ОЧИСТКА ======
+-- ====== ИСПРАВЛЕННАЯ ОЧИСТКА ======
 window:OnDestroy(function()
     toggleMouseUnlock(false)
     if fovCircle then
@@ -1272,12 +1290,14 @@ window:OnDestroy(function()
     for _, esp in pairs(espObjects) do
         pcall(function()
             if esp.Box then esp.Box:Remove() end
-            if esp.Name then
-esp.Name:Remove() end
+            if esp.Name then esp.Name:Remove() end
             if esp.Health then esp.Health:Remove() end
             for _, bone in pairs(esp.Skeleton) do
-                if bone then bone:Remove() end
+                if bone then 
+                    pcall(function() bone:Remove() end)
+                end
             end
+            esp.Skeleton = {}
         end)
     end
     espObjects = {}
@@ -1301,6 +1321,7 @@ print("AIMBOT: Works ALWAYS | Only alive targets")
 print("SILENT AIM: Bullets fly to ALIVE enemies in radius")
 print("  - NO aim movement!")
 print("  - Show FOV Circle: Show range circle")
+print("  - Shoot Through Walls: OFF by default")
 print("TELEPORT: Press T to teleport (alive enemies only)")
 print("ESP: Shows players through walls | Hides when dead")
 print("DISABLE ALL: Press F8")
